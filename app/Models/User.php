@@ -66,6 +66,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get user transactions.
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    /**
      * Seed starter accounts and categories for this user.
      */
     public function seedDefaultFinances(): void

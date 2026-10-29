@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -30,6 +31,9 @@ Route::middleware('auth')->group(function () {
 
     // Kategori / Categories
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
+
+    // Transaksi / Transactions
+    Route::resource('transactions', TransactionController::class)->except(['create', 'show', 'edit']);
 });
 
 require __DIR__.'/auth.php';
