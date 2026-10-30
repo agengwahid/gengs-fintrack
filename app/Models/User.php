@@ -74,6 +74,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get user budgets.
+     */
+    public function budgets(): HasMany
+    {
+        return $this->hasMany(Budget::class);
+    }
+
+    /**
      * Seed starter accounts and categories for this user.
      */
     public function seedDefaultFinances(): void
