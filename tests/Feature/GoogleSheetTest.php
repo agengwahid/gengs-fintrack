@@ -320,3 +320,32 @@ test('user can delete saved service account credentials', function () {
     expect($setting->client_email)->toBeNull();
     expect($setting->service_account_credentials)->toBeNull();
 });
+
+test('artisan command fintrack:sync-sheets dispatches sync jobs for enabled users', function () {
+    Queue::fake();
+
+    $user1 = User::factory()->create();
+    GoogleSheetSetting::create([
+        'user_id' => $user1->id,
+        'is_enabled' => true,
+        'spreadsheet_id' => 'sample-id-1',
+        'service_account_credentials' => ['type' => 'service_account'],
+    ]);
+
+    $user2 = User::factory()->create();
+    GoogleSheetSetting::create([
+        'user_id' => $user2->id,
+        'is_enabled' => false, // disabled
+        'spreadsheet_id' => 'sample-id-2',
+        'service_account_credentials' => ['type' => 'service_account'],
+    ]);
+
+    $this->artisan('fintrack:sync-sheets')
+        ->expectsOutput('Memulai sinkronisasi seluruh data ke Google Sheets...')
+        ->expectsOutput('Berhasil mengirim 1 antrean sinkronisasi ke Google Sheets.')
+        ->assertExitCode(0);
+
+    Queue::assertPushed(SyncTransactionToGoogleSheet::class, function ($job) use ($user1) {
+        return $job->userId === $user1->id && $job->action === 'sync_all';
+    });
+});

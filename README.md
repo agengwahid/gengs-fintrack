@@ -1,58 +1,154 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# FinTrack (Gengs FinTrack)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi pencatatan keuangan pribadi modern, responsif, aman, dan berstandar internasional yang terintegrasi secara otomatis dengan **Google Sheets API**. Dibangun menggunakan **Laravel 12**, **Vue 3 Composition API**, **Inertia.js v2**, **Tailwind CSS**, dan basis data **PostgreSQL**.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🌟 Fitur Utama
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 1. Dashboard Finansial Terpadu
+- **Ringkasan Saldo**: Total saldo seluruh rekening aktif, pemasukan bulan berjalan, pengeluaran bulan berjalan, dan arus kas bersih (*net cashflow*).
+- **Grafik Tren Bulanan**: Visualisasi bar chart interaktif perbandingan arus kas bulanan menggunakan **Chart.js**.
+- **Komposisi Pengeluaran**: Visualisasi doughnut chart persentase pengeluaran per kategori.
+- **Daftar Transaksi Terbaru**: Menampilkan mutasi rekening teranyar dengan badge status warna.
+- **Ringkasan Realisasi Anggaran**: Memantau kategori yang mendekati atau melebihi pagu anggaran secara cepat.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 2. Multi-Rekening (Accounts Management)
+- Mendukung berbagai jenis rekening: **Tunai (Cash)**, **Bank**, **E-Wallet**, **Investasi**, dan **Kartu Kredit**.
+- Saldo awal dan perhitungan saldo dinamis berbasis mutasi riil.
+- Proteksi penghapusan aman: rekening yang memiliki transaksi dicegah untuk dihapus sembarangan.
+- Fitur penonaktifan rekening (*is_active*).
 
-## Learning Laravel
+### 3. Manajemen Kategori Berjenjang (Categories Management)
+- Klasifikasi tipe kategori: **Pemasukan (Income)** dan **Pengeluaran (Expense)**.
+- Dilengkapi kustomisasi warna HEX dan pemilihan ikon dinamis (Lucide Icons).
+- Seeder bawaan 15+ kategori populer Indonesia (Gaji, Makanan, Transportasi, Tagihan, Hiburan, dll).
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 4. Transaksi & Kalkulasi Saldo Idempoten
+- CRUD transaksi komprehensif dengan identitas **UUID**.
+- Fitur pencarian teks, filter rentang tanggal, filter rekening, kategori, dan jenis transaksi.
+- Pagination dan penanganan format desimal Rupiah secara presisi.
+- Perhitungan saldo konsisten di dalam database transaction.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 5. Anggaran Bulanan (Monthly Budgets)
+- Penetapan plafon anggaran per kategori per bulan (format `YYYY-MM`).
+- Kalkulasi realisasi pengeluaran, sisa anggaran, dan persentase penggunaan secara otomatis.
+- Indikator visual progres: bar hijau (aman), kuning (mendekati batas 80%), dan merah (over-budget).
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### 6. Laporan Finansial & Ekspor CSV
+- Laporan arus kas harian, bulanan, tahunan, atau rentang tanggal kustom.
+- Ringkasan akumulasi per kategori dan per rekening.
+- **Ekspor CSV**: Pengunduhan data transaksi terfilter dengan encoding **UTF-8 BOM** agar terbaca rapi di Microsoft Excel.
 
-## Agentic Development
+### 7. Integrasi Google Sheets Server-Side (Web UI Configured)
+- **Non-Hardcoded**: Unggah file Service Account JSON atau tempel teks kredensial langsung melalui antarmuka web (`/sheets`).
+- **Auto-Extract URL**: Menempelkan link lengkap Google Spreadsheet akan diekstrak ID-nya secara otomatis.
+- **Enkripsi Kredensial Database**: Kunci privat Google disimpan aman di PostgreSQL dengan enkripsi AES bawaan Laravel (`'service_account_credentials' => 'encrypted:array'`).
+- **Sinkronisasi Otomatis 3 Worksheet**:
+  1. `Transactions`: Baris riwayat transaksi lengkap dengan identitas unik idempoten.
+  2. `Monthly Summary`: Rekapitulasi pemasukan, pengeluaran, dan selisih per bulan.
+  3. `Category Summary`: Akumulasi pengeluaran per kategori.
+- **Antrean Latar Belakang (Database Queue)**: Menggunakan queue worker dengan percobaan ulang (*retry* 3x) dan penanganan backoff sehingga transaksi web tidak terhambat.
+- **Fitur Bantuan Pengguna**: Tombol uji koneksi instan, tombol 1-klik salin email Service Account, dan tombol sinkronisasi massal (*Sync All*).
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 8. Keamanan & Pengaturan Akun
+- Autentikasi sesi Laravel dengan proteksi CSRF, password hashing, dan rate-limiting.
+- Isolasi data pengguna secara ketat: seluruh query dibatasi berdasarkan pengguna yang sedang login.
+- Sanitasi pesan error: token akses dan private key disamarkan dari log database (`[REDACTED_KEY]`).
+- Halaman pengaturan profil, ganti kata sandi, dan preferensi lokalisasi Indonesia.
 
-```bash
-composer require laravel/boost --dev
+---
 
-php artisan boost:install
-```
+## 🛠️ Tech Stack
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+- **Backend**: Laravel 12 (PHP 8.3+)
+- **Frontend**: Vue 3 (Composition API, `<script setup>`)
+- **Adapter SPA**: Inertia.js v2
+- **Styling**: Tailwind CSS
+- **Database**: PostgreSQL 15/16 (UUID Primary Keys)
+- **Queue Worker**: Laravel Database Queue
+- **Spreadsheet API**: Google Client Services API (`google/apiclient`)
+- **Grafik & Ikon**: Chart.js & Lucide Vue Icons
+- **Pengujian**: Pest PHP (86 Automated Tests)
+- **Formatting**: Laravel Pint
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 🚀 Panduan Instalasi Lokal (Local Development)
 
-## Code of Conduct
+### Prasyarat
+- PHP >= 8.3 dengan ekstensi `pdo_pgsql`, `bcmath`, `curl`, `mbstring`, `zip`, `pcntl`
+- PostgreSQL Server
+- Composer 2+
+- Node.js >= 20 & npm
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Langkah Instalasi
 
-## Security Vulnerabilities
+1. **Clone repository**:
+   ```bash
+   git clone https://github.com/agengwahid/gengs-fintrack.git
+   cd gengs-fintrack
+   ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+2. **Install dependensi**:
+   ```bash
+   composer install
+   npm install
+   ```
 
-## License
+3. **Konfigurasi Environment**:
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+4. **Konfigurasi Database di `.env`**:
+   ```ini
+   DB_CONNECTION=pgsql
+   DB_HOST=127.0.0.1
+   DB_PORT=5432
+   DB_DATABASE=gengs_fintrack
+   DB_USERNAME=postgres
+   DB_PASSWORD=rahasia
+   QUEUE_CONNECTION=database
+   ```
+
+5. **Jalankan Migrasi & Seeder**:
+   ```bash
+   php artisan migrate
+   php artisan db:seed --class=CategorySeeder
+   ```
+
+6. **Jalankan Pengujian (Testing)**:
+   ```bash
+   ./vendor/bin/pest
+   ```
+
+7. **Jalankan Server Lokal**:
+   - Terminal 1 (Laravel Server):
+     ```bash
+     php artisan serve
+     ```
+   - Terminal 2 (Vite HMR):
+     ```bash
+     npm run dev
+     ```
+   - Terminal 3 (Queue Worker untuk Google Sheets):
+     ```bash
+     php artisan queue:work
+     ```
+
+Buka browser Anda di `http://localhost:8000`.
+
+---
+
+## 🚢 Panduan Deployment Server Produksi
+
+Untuk panduan lengkap setup di VPS Ubuntu (Nginx, Supervisor, SSL Let's Encrypt, dan Cron Scheduler), silakan baca file:
+👉 **[DEPLOYMENT.md](DEPLOYMENT.md)**
+
+---
+
+## 📄 Lisensi
+
+Aplikasi ini dilisensikan di bawah [MIT License](LICENSE).
