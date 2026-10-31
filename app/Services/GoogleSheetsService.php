@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Transaction;
+use App\Models\User;
 use Carbon\Carbon;
 use Exception;
 use Google\Client as GoogleClient;
@@ -18,25 +19,51 @@ use Throwable;
 
 class GoogleSheetsService
 {
+    protected ?User $user = null;
+
     protected ?GoogleClient $client = null;
 
     protected ?GoogleSheets $service = null;
 
     /**
+     * Set context user for user-specific spreadsheet configuration.
+     */
+    public function forUser(?User $user): self
+    {
+        $this->user = $user;
+        $this->client = null;
+        $this->service = null;
+
+        return $this;
+    }
+
+    /**
      * Check if Google Sheets integration is enabled and configured.
      */
-    public function isEnabled(): bool
+    public function isEnabled(?User $user = null): bool
     {
+        $u = $user ?? $this->user;
+
+        if ($u && $u->googleSheetSetting) {
+            return $u->googleSheetSetting->isReady();
+        }
+
         return config('services.google_sheets.enabled', false)
-            && ! empty($this->getSpreadsheetId())
-            && $this->credentialsExist();
+            && ! empty($this->getSpreadsheetId($u))
+            && $this->credentialsExist($u);
     }
 
     /**
      * Get configured Google Spreadsheet ID.
      */
-    public function getSpreadsheetId(): ?string
+    public function getSpreadsheetId(?User $user = null): ?string
     {
+        $u = $user ?? $this->user;
+
+        if ($u && $u->googleSheetSetting && ! empty($u->googleSheetSetting->spreadsheet_id)) {
+            return $u->googleSheetSetting->spreadsheet_id;
+        }
+
         return config('services.google_sheets.spreadsheet_id');
     }
 
@@ -55,34 +82,54 @@ class GoogleSheetsService
     }
 
     /**
-     * Check if credentials file exists on disk.
+     * Check if credentials exist (either in user database setting or on disk).
      */
-    public function credentialsExist(): bool
+    public function credentialsExist(?User $user = null): bool
     {
+        $u = $user ?? $this->user;
+
+        if ($u && $u->googleSheetSetting && $u->googleSheetSetting->hasCredentials()) {
+            return true;
+        }
+
         return file_exists($this->getCredentialsPath());
     }
 
     /**
      * Get or initialize Google Client.
      */
-    public function getClient(): GoogleClient
+    public function getClient(?User $user = null): GoogleClient
     {
         if ($this->client !== null) {
             return $this->client;
         }
 
-        $credentialsPath = $this->getCredentialsPath();
-
-        if (! file_exists($credentialsPath)) {
-            throw new Exception("File kredensial Google Sheets tidak ditemukan di: {$credentialsPath}");
-        }
-
+        $u = $user ?? $this->user;
         $client = new GoogleClient;
         $client->setApplicationName(config('app.name', 'FinTrack'));
         $client->setScopes([GoogleSheets::SPREADSHEETS]);
-        $client->setAuthConfig($credentialsPath);
         $client->setAccessType('offline');
 
+        // Check user database credentials first
+        if ($u && $u->googleSheetSetting && $u->googleSheetSetting->hasCredentials()) {
+            $credentialsArray = $u->googleSheetSetting->getCredentialsArray();
+            if (! is_array($credentialsArray)) {
+                throw new Exception('Format kredensial Google Service Account pada pengaturan akun tidak valid.');
+            }
+            $client->setAuthConfig($credentialsArray);
+            $this->client = $client;
+
+            return $this->client;
+        }
+
+        // Fallback to disk credentials file
+        $credentialsPath = $this->getCredentialsPath();
+
+        if (! file_exists($credentialsPath)) {
+            throw new Exception('File kredensial Google Sheets belum diunggah atau tidak ditemukan.');
+        }
+
+        $client->setAuthConfig($credentialsPath);
         $this->client = $client;
 
         return $this->client;
@@ -91,13 +138,13 @@ class GoogleSheetsService
     /**
      * Get or initialize Google Sheets API Service.
      */
-    public function getService(): GoogleSheets
+    public function getService(?User $user = null): GoogleSheets
     {
         if ($this->service !== null) {
             return $this->service;
         }
 
-        $this->service = new GoogleSheets($this->getClient());
+        $this->service = new GoogleSheets($this->getClient($user));
 
         return $this->service;
     }
@@ -105,45 +152,92 @@ class GoogleSheetsService
     /**
      * Test connection to Google Spreadsheet and verify permissions.
      */
-    public function testConnection(): array
+    public function testConnection(?User $user = null): array
     {
+        $u = $user ?? $this->user;
+
         try {
-            $spreadsheetId = $this->getSpreadsheetId();
+            $spreadsheetId = $this->getSpreadsheetId($u);
 
             if (empty($spreadsheetId)) {
+                $errorMsg = 'ID Google Spreadsheet belum diisi.';
+                $this->recordTestResult($u, false, $errorMsg);
+
                 return [
                     'success' => false,
-                    'message' => 'GOOGLE_SHEETS_SPREADSHEET_ID belum dikonfigurasi di file .env.',
+                    'message' => $errorMsg,
                 ];
             }
 
-            if (! $this->credentialsExist()) {
+            if (! $this->credentialsExist($u)) {
+                $errorMsg = 'Kredensial Service Account belum diunggah.';
+                $this->recordTestResult($u, false, $errorMsg);
+
                 return [
                     'success' => false,
-                    'message' => 'File kredensial service account (JSON) tidak ditemukan di: '.$this->getCredentialsPath(),
+                    'message' => $errorMsg,
                 ];
             }
 
-            $service = $this->getService();
+            $service = $this->getService($u);
             $spreadsheet = $service->spreadsheets->get($spreadsheetId);
             $title = $spreadsheet->getProperties()->getTitle();
 
             // Ensure our 3 worksheets exist
-            $this->ensureWorksheetsExist();
+            $this->ensureWorksheetsExist($u);
+
+            $successMsg = "Koneksi berhasil! Terhubung ke spreadsheet '{$title}'.";
+            $this->recordTestResult($u, true, $successMsg);
 
             return [
                 'success' => true,
                 'title' => $title,
-                'message' => "Koneksi berhasil! Terhubung ke spreadsheet '{$title}'.",
+                'message' => $successMsg,
             ];
         } catch (Throwable $e) {
+            $sanitized = $this->sanitizeErrorMessage($e->getMessage());
             Log::error('Google Sheets test connection error: '.$e->getMessage());
+
+            $this->recordTestResult($u, false, $sanitized);
 
             return [
                 'success' => false,
-                'message' => $this->sanitizeErrorMessage($e->getMessage()),
+                'message' => $sanitized,
             ];
         }
+    }
+
+    /**
+     * Record last test result in user settings if available.
+     */
+    protected function recordTestResult(?User $user, bool $success, string $message): void
+    {
+        if ($user && $user->googleSheetSetting) {
+            $user->googleSheetSetting->update([
+                'last_tested_at' => now(),
+                'last_test_status' => $success ? 'success' : 'failed',
+                'last_test_message' => mb_substr($message, 0, 500),
+            ]);
+        }
+    }
+
+    /**
+     * Extract spreadsheet ID from either a full URL or plain ID string.
+     */
+    public static function extractSpreadsheetId(?string $input): ?string
+    {
+        if (empty($input)) {
+            return null;
+        }
+
+        $input = trim($input);
+
+        // Check if full Google Sheets URL
+        if (preg_match('/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/', $input, $matches)) {
+            return $matches[1];
+        }
+
+        return $input;
     }
 
     /**
@@ -152,10 +246,11 @@ class GoogleSheetsService
      * 2. Monthly Summary
      * 3. Category Summary
      */
-    public function ensureWorksheetsExist(): void
+    public function ensureWorksheetsExist(?User $user = null): void
     {
-        $spreadsheetId = $this->getSpreadsheetId();
-        $service = $this->getService();
+        $u = $user ?? $this->user;
+        $spreadsheetId = $this->getSpreadsheetId($u);
+        $service = $this->getService($u);
 
         $spreadsheet = $service->spreadsheets->get($spreadsheetId);
         $sheets = $spreadsheet->getSheets();
@@ -243,10 +338,13 @@ class GoogleSheetsService
      */
     public function upsertTransaction(Transaction $transaction): void
     {
-        $this->ensureWorksheetsExist();
+        $u = $transaction->user ?? ($this->user ?? User::find($transaction->user_id));
+        $this->forUser($u);
 
-        $spreadsheetId = $this->getSpreadsheetId();
-        $service = $this->getService();
+        $this->ensureWorksheetsExist($u);
+
+        $spreadsheetId = $this->getSpreadsheetId($u);
+        $service = $this->getService($u);
 
         // 1. Fetch column A of Transactions sheet to check if ID exists
         $range = 'Transactions!A:A';
@@ -301,12 +399,15 @@ class GoogleSheetsService
     /**
      * Delete transaction row from 'Transactions' sheet based on Transaction ID.
      */
-    public function deleteTransaction(string $transactionId): void
+    public function deleteTransaction(string $transactionId, ?User $user = null): void
     {
-        $this->ensureWorksheetsExist();
+        $u = $user ?? $this->user;
+        $this->forUser($u);
 
-        $spreadsheetId = $this->getSpreadsheetId();
-        $service = $this->getService();
+        $this->ensureWorksheetsExist($u);
+
+        $spreadsheetId = $this->getSpreadsheetId($u);
+        $service = $this->getService($u);
 
         // Find sheetId for 'Transactions'
         $spreadsheet = $service->spreadsheets->get($spreadsheetId);
@@ -366,10 +467,13 @@ class GoogleSheetsService
      */
     public function updateSummaries(?string $userId = null): void
     {
-        $this->ensureWorksheetsExist();
+        $u = $userId ? User::find($userId) : $this->user;
+        $this->forUser($u);
 
-        $spreadsheetId = $this->getSpreadsheetId();
-        $service = $this->getService();
+        $this->ensureWorksheetsExist($u);
+
+        $spreadsheetId = $this->getSpreadsheetId($u);
+        $service = $this->getService($u);
 
         // Query transactions
         $query = Transaction::query();

@@ -3,10 +3,12 @@
 use App\Jobs\SyncTransactionToGoogleSheet;
 use App\Models\Account;
 use App\Models\Category;
+use App\Models\GoogleSheetSetting;
 use App\Models\SheetSyncLog;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\GoogleSheetsService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 
 test('unauthenticated users are redirected to login when visiting sheets center', function () {
@@ -140,6 +142,7 @@ test('sync job successfully executes with mocked sheets service', function () {
 
     // Mock GoogleSheetsService
     $mockService = Mockery::mock(GoogleSheetsService::class);
+    $mockService->shouldReceive('forUser')->andReturnSelf();
     $mockService->shouldReceive('isEnabled')->andReturn(true);
     $mockService->shouldReceive('upsertTransaction')->once()->with(Mockery::type(Transaction::class));
     $mockService->shouldReceive('updateSummaries')->once()->with($user->id);
@@ -228,4 +231,92 @@ test('sheets service sanitizes sensitive keys and bearer tokens from error messa
     $sanitizedToken = $service->sanitizeErrorMessage($errorWithToken);
     expect($sanitizedToken)->not->toContain('very_secret_oauth_token');
     expect($sanitizedToken)->toContain('Bearer [REDACTED_TOKEN]');
+});
+
+test('user can update google sheet settings by uploading json file and pasting full url', function () {
+    $user = User::factory()->create();
+
+    $fakeCredentials = [
+        'type' => 'service_account',
+        'project_id' => 'fintrack-demo-project',
+        'client_email' => 'fintrack-sheets@fintrack-demo.iam.gserviceaccount.com',
+        'private_key' => '-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC6\n-----END PRIVATE KEY-----\n',
+    ];
+
+    $file = UploadedFile::fake()->createWithContent('service-account.json', json_encode($fakeCredentials));
+
+    $response = $this->actingAs($user)->post(route('sheets.settings.update'), [
+        'is_enabled' => true,
+        'spreadsheet_id' => 'https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit#gid=0',
+        'credentials_file' => $file,
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHas('success');
+
+    $setting = GoogleSheetSetting::where('user_id', $user->id)->first();
+    expect($setting)->not->toBeNull();
+    expect($setting->is_enabled)->toBeTrue();
+    // Verify spreadsheet ID is automatically parsed from the URL
+    expect($setting->spreadsheet_id)->toBe('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms');
+    expect($setting->client_email)->toBe('fintrack-sheets@fintrack-demo.iam.gserviceaccount.com');
+    expect($setting->project_id)->toBe('fintrack-demo-project');
+    expect($setting->service_account_credentials)->toHaveKey('private_key');
+});
+
+test('user can update google sheet settings by pasting json string', function () {
+    $user = User::factory()->create();
+
+    $fakeCredentials = [
+        'type' => 'service_account',
+        'project_id' => 'pasted-project',
+        'client_email' => 'pasted-sa@pasted-project.iam.gserviceaccount.com',
+        'private_key' => 'fake-key',
+    ];
+
+    $response = $this->actingAs($user)->post(route('sheets.settings.update'), [
+        'is_enabled' => true,
+        'spreadsheet_id' => 'simple-sheet-id-12345',
+        'credentials_json' => json_encode($fakeCredentials),
+    ]);
+
+    $response->assertRedirect();
+
+    $setting = GoogleSheetSetting::where('user_id', $user->id)->first();
+    expect($setting)->not->toBeNull();
+    expect($setting->spreadsheet_id)->toBe('simple-sheet-id-12345');
+    expect($setting->client_email)->toBe('pasted-sa@pasted-project.iam.gserviceaccount.com');
+});
+
+test('updating credentials with invalid json returns validation error', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->post(route('sheets.settings.update'), [
+        'is_enabled' => true,
+        'spreadsheet_id' => 'test-sheet-id',
+        'credentials_json' => 'this-is-not-valid-json',
+    ]);
+
+    $response->assertSessionHasErrors('credentials_json');
+});
+
+test('user can delete saved service account credentials', function () {
+    $user = User::factory()->create();
+
+    GoogleSheetSetting::create([
+        'user_id' => $user->id,
+        'is_enabled' => true,
+        'spreadsheet_id' => 'sample-id',
+        'client_email' => 'sa@example.com',
+        'project_id' => 'demo',
+        'service_account_credentials' => ['type' => 'service_account'],
+    ]);
+
+    $response = $this->actingAs($user)->delete(route('sheets.credentials.destroy'));
+
+    $response->assertRedirect();
+
+    $setting = GoogleSheetSetting::where('user_id', $user->id)->first();
+    expect($setting->client_email)->toBeNull();
+    expect($setting->service_account_credentials)->toBeNull();
 });
