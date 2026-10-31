@@ -28,7 +28,9 @@ import {
     Upload,
     Check,
     Trash2,
-    KeyRound
+    KeyRound,
+    Sparkles,
+    Server,
 } from '@lucide/vue';
 
 const props = defineProps({
@@ -50,17 +52,24 @@ const isTesting = ref(false);
 const isSyncingAll = ref(false);
 const showGuide = ref(false);
 const showSettings = ref(false);
+const showAdvancedCreds = ref(false);
 const copiedEmail = ref(false);
 const isDeleteCredsModalOpen = ref(false);
 const fileInput = ref(null);
 const selectedFileName = ref('');
 
 const settingsForm = useForm({
-    is_enabled: props.config.enabled,
+    is_enabled: props.config.enabled ?? true,
     spreadsheet_id: props.config.spreadsheet_id || '',
     credentials_file: null,
     credentials_json: '',
 });
+
+function handleSpreadsheetInput() {
+    if (settingsForm.spreadsheet_id && settingsForm.spreadsheet_id.trim() !== '') {
+        settingsForm.is_enabled = true;
+    }
+}
 
 function handleFileChange(event) {
     const file = event.target.files[0];
@@ -189,7 +198,7 @@ function getActionLabel(action) {
         </template>
 
         <div class="space-y-6">
-            <!-- Form Pengaturan Interaktif (Bisa Dibuka/Tutup) -->
+            <!-- Form Pengaturan Interaktif (Power UI) -->
             <div
                 v-show="showSettings"
                 class="bg-white rounded-2xl p-5 sm:p-6 border border-emerald-200 shadow-md ring-1 ring-emerald-500/10 transition-all duration-300"
@@ -200,8 +209,8 @@ function getActionLabel(action) {
                             <Settings2 class="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 class="text-sm font-bold text-slate-900">Form Pengaturan Google Sheets</h3>
-                            <p class="text-xs text-slate-500">Masukkan ID Spreadsheet dan unggah file kunci Service Account tanpa perlu edit file sistem</p>
+                            <h3 class="text-sm font-bold text-slate-900">Pengaturan Google Sheets</h3>
+                            <p class="text-xs text-slate-500">Konfigurasi spreadsheet dan mode integrasi</p>
                         </div>
                     </div>
 
@@ -212,6 +221,22 @@ function getActionLabel(action) {
                     >
                         Tutup
                     </button>
+                </div>
+
+                <!-- Banner Mode Siap Pakai -->
+                <div v-if="config.has_global_credentials && !config.has_custom_credentials" class="mt-4 p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/90 flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <Sparkles class="w-4 h-4" />
+                    </div>
+                    <div class="text-xs text-slate-700 leading-relaxed">
+                        <div class="font-bold text-emerald-950 flex items-center gap-1.5">
+                            <span>Mode Siap Pakai Aktif</span>
+                            <span class="text-[10px] px-1.5 py-0.5 bg-emerald-200 text-emerald-800 rounded font-bold">Rekomendasi</span>
+                        </div>
+                        <p class="mt-0.5 text-slate-600">
+                            Server telah menyediakan koneksi Service Account resmi. Anda <strong>tidak perlu membuat akun Google Cloud Console atau upload JSON</strong>. Cukup masukkan ID/tautan spreadsheet Anda di bawah dan bagikan akses ke email aplikasi.
+                        </p>
+                    </div>
                 </div>
 
                 <form @submit.prevent="submitSettings" class="mt-5 space-y-5">
@@ -237,60 +262,79 @@ function getActionLabel(action) {
                         </label>
                     </div>
 
-                    <!-- Input Spreadsheet ID / URL -->
+                    <!-- Input Utama: Spreadsheet ID / URL Lengkap -->
                     <div>
-                        <InputLabel for="spreadsheet_id" value="ID atau Tautan Lengkap Google Spreadsheet" />
+                        <div class="flex items-center justify-between">
+                            <InputLabel for="spreadsheet_id" value="Tautan Lengkap atau ID Google Spreadsheet" class="font-bold text-xs" />
+                            <span class="text-[11px] text-emerald-600 font-semibold">Cukup Paste URL dari Browser</span>
+                        </div>
                         <TextInput
                             id="spreadsheet_id"
                             type="text"
                             v-model="settingsForm.spreadsheet_id"
+                            @input="handleSpreadsheetInput"
                             class="mt-1 block w-full text-xs font-mono"
                             placeholder="Contoh: https://docs.google.com/spreadsheets/d/1BxiMVs0.../edit atau ID spreadsheet"
                         />
                         <p class="text-[11px] text-slate-400 mt-1">
-                            Anda bisa langsung menempelkan (paste) URL lengkap spreadsheet dari browser. Sistem akan otomatis mengekstrak ID-nya.
+                            Anda bisa langsung menempelkan (paste) URL lengkap spreadsheet dari browser. Sistem otomatis mengekstrak ID-nya.
                         </p>
                         <InputError class="mt-1.5" :message="settingsForm.errors.spreadsheet_id" />
                     </div>
 
-                    <!-- Upload Kredensial Service Account JSON -->
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <InputLabel value="Kredensial Service Account (File JSON)" />
-                            <span v-if="config.credentials_exist" class="text-xs text-emerald-600 font-semibold inline-flex items-center gap-1">
-                                <CheckCircle2 class="w-3.5 h-3.5" />
-                                Kredensial sudah terpasang
-                            </span>
-                        </div>
+                    <!-- Bagian Mode Lanjutan (Power User) -->
+                    <div class="pt-3 border-t border-slate-100">
+                        <button
+                            type="button"
+                            @click="showAdvancedCreds = !showAdvancedCreds"
+                            class="text-xs font-bold text-slate-500 hover:text-emerald-700 inline-flex items-center gap-1.5 transition py-1"
+                        >
+                            <ChevronDown class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': showAdvancedCreds }" />
+                            <span>{{ config.has_custom_credentials ? 'Kelola Kunci Kredensial Pribadi Anda' : '⚙️ Ingin Menggunakan Kunci Google Cloud Sendiri? (Power User)' }}</span>
+                        </button>
 
-                        <div class="mt-1 flex flex-col sm:flex-row items-center gap-3">
-                            <label class="w-full sm:w-auto flex-1 cursor-pointer flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-emerald-500 hover:bg-emerald-50/20 transition text-xs font-medium text-slate-600">
-                                <Upload class="w-4 h-4 text-emerald-600" />
-                                <span>{{ selectedFileName || 'Pilih atau Tarik File JSON Kredensial ke Sini' }}</span>
-                                <input
-                                    ref="fileInput"
-                                    type="file"
-                                    accept=".json,application/json"
-                                    @change="handleFileChange"
-                                    class="hidden"
-                                />
-                            </label>
+                        <div v-show="showAdvancedCreds || !config.has_global_credentials" class="mt-3 p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-800">Kredensial Service Account Pribadi (File JSON)</h4>
+                                    <p class="text-[11px] text-slate-500">Unggah kunci JSON Service Account jika Anda ingin menggunakan kuota GCP Anda sendiri</p>
+                                </div>
+                                <span v-if="config.has_custom_credentials" class="text-xs text-emerald-600 font-bold inline-flex items-center gap-1">
+                                    <CheckCircle2 class="w-3.5 h-3.5" />
+                                    Kunci Pribadi Aktif
+                                </span>
+                            </div>
 
-                            <button
-                                v-if="config.has_custom_credentials"
-                                type="button"
-                                @click="isDeleteCredsModalOpen = true"
-                                class="px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 transition inline-flex items-center gap-1 shrink-0"
-                                title="Hapus file kredensial dari akun"
-                            >
-                                <Trash2 class="w-3.5 h-3.5" />
-                                <span>Hapus Kunci</span>
-                            </button>
+                            <div class="flex flex-col sm:flex-row items-center gap-3">
+                                <label class="w-full sm:w-auto flex-1 cursor-pointer flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-emerald-500 hover:bg-emerald-50/20 transition text-xs font-medium text-slate-600 bg-white">
+                                    <Upload class="w-4 h-4 text-emerald-600" />
+                                    <span>{{ selectedFileName || 'Pilih atau Tarik File JSON Kredensial ke Sini' }}</span>
+                                    <input
+                                        ref="fileInput"
+                                        type="file"
+                                        accept=".json,application/json"
+                                        @change="handleFileChange"
+                                        class="hidden"
+                                    />
+                                </label>
+
+                                <button
+                                    v-if="config.has_custom_credentials"
+                                    type="button"
+                                    @click="isDeleteCredsModalOpen = true"
+                                    class="px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 transition inline-flex items-center gap-1 shrink-0"
+                                    title="Hapus file kredensial dari akun dan gunakan kredensial server"
+                                >
+                                    <Trash2 class="w-3.5 h-3.5" />
+                                    <span>Hapus & Gunakan Server</span>
+                                </button>
+                            </div>
+
+                            <p class="text-[11px] text-slate-400">
+                                File JSON ini didapat dari menu <em>Google Cloud Console &rarr; Service Accounts &rarr; Keys (JSON)</em>. Disimpan terenkripsi aman dengan algoritma AES-256.
+                            </p>
+                            <InputError class="mt-1" :message="settingsForm.errors.credentials_file" />
                         </div>
-                        <p class="text-[11px] text-slate-400 mt-1.5">
-                            File JSON ini didapat dari menu <em>Google Cloud Console &rarr; Service Accounts &rarr; Keys &rarr; Create new key (JSON)</em>. File disimpan terenkripsi secara aman dengan algoritma AES-256.
-                        </p>
-                        <InputError class="mt-1.5" :message="settingsForm.errors.credentials_file" />
                     </div>
 
                     <!-- Tombol Aksi Simpan -->
@@ -298,7 +342,7 @@ function getActionLabel(action) {
                         <SecondaryButton type="button" @click="showSettings = false">
                             Batal
                         </SecondaryButton>
-                        <PrimaryButton :disabled="settingsForm.processing">
+                        <PrimaryButton :disabled="settingsForm.processing" class="!bg-emerald-600 hover:!bg-emerald-700">
                             {{ settingsForm.processing ? 'Menyimpan...' : 'Simpan Pengaturan' }}
                         </PrimaryButton>
                     </div>
@@ -393,7 +437,9 @@ function getActionLabel(action) {
                         >
                             <CheckCircle2 v-if="config.credentials_exist" class="w-4 h-4 shrink-0" />
                             <AlertCircle v-else class="w-4 h-4 shrink-0" />
-                            <span>{{ config.credentials_exist ? 'Tersimpan Terenkripsi' : 'Belum Ada Kredensial' }}</span>
+                            <span v-if="config.has_custom_credentials">Kustom Pribadi (Terenkripsi)</span>
+                            <span v-else-if="config.has_global_credentials">Bawaan Server (Siap Pakai)</span>
+                            <span v-else>{{ config.credentials_exist ? 'Tersimpan Terenkripsi' : 'Belum Ada Kredensial' }}</span>
                         </div>
                     </div>
                 </div>
@@ -490,7 +536,7 @@ function getActionLabel(action) {
                 </div>
             </div>
 
-            <!-- Panduan Pengaturan Google Service Account (Accordion) -->
+            <!-- Panduan Pengaturan Google Spreadsheet (Accordion) -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <button
                     type="button"
@@ -502,8 +548,8 @@ function getActionLabel(action) {
                             <HelpCircle class="w-4 h-4" />
                         </div>
                         <div>
-                            <h4 class="text-sm font-bold text-slate-900">Panduan Praktis Mendapatkan Kunci Service Account</h4>
-                            <p class="text-xs text-slate-500 mt-0.5">Cara mudah membuat Service Account gratis dari Google Cloud</p>
+                            <h4 class="text-sm font-bold text-slate-900">Panduan Menghubungkan Google Spreadsheet</h4>
+                            <p class="text-xs text-slate-500 mt-0.5">Petunjuk praktis menghubungkan spreadsheet Anda dalam hitungan menit</p>
                         </div>
                     </div>
 
@@ -513,29 +559,60 @@ function getActionLabel(action) {
                     </div>
                 </button>
 
-                <div v-show="showGuide" class="p-5 sm:p-6 border-t border-slate-100 bg-slate-50/50 space-y-4 text-xs text-slate-600 leading-relaxed">
-                    <ol class="list-decimal list-inside space-y-3 font-medium">
-                        <li>
-                            <strong>Buka Google Cloud Console</strong>: Kunjungi
-                            <a href="https://console.cloud.google.com" target="_blank" class="text-emerald-600 underline font-bold">Google Cloud Console</a>
-                            dan buat project baru (misal: <code>FinTrack</code>).
-                        </li>
-                        <li>
-                            <strong>Aktifkan Google Sheets API</strong>: Masuk ke menu <em>APIs & Services &rarr; Library</em>, cari <strong>Google Sheets API</strong>, lalu klik <strong>Enable (Aktifkan)</strong>.
-                        </li>
-                        <li>
-                            <strong>Buat Service Account</strong>: Masuk ke <em>APIs & Services &rarr; Credentials</em>, klik <em>+ Create Credentials &rarr; Service Account</em>. Beri nama service account (contoh: <code>fintrack-sync</code>).
-                        </li>
-                        <li>
-                            <strong>Unduh Kunci Kredensial JSON</strong>: Klik service account yang baru dibuat, masuk ke tab <em>Keys &rarr; Add Key &rarr; Create new key (pilih JSON)</em>. File <code>.json</code> akan terunduh ke komputer Anda.
-                        </li>
-                        <li>
-                            <strong>Unggah di FinTrack</strong>: Klik tombol <strong>Ubah Pengaturan</strong> di atas, lalu pilih file JSON yang baru saja diunduh.
-                        </li>
-                        <li>
-                            <strong>Bagikan Spreadsheet Anda</strong>: Buka spreadsheet Anda di browser, klik tombol <strong>Share (Bagikan)</strong>, dan masukkan alamat email service account yang muncul dengan peran <strong>Editor</strong>.
-                        </li>
-                    </ol>
+                <div v-show="showGuide" class="p-5 sm:p-6 border-t border-slate-100 bg-slate-50/50 space-y-6 text-xs text-slate-600 leading-relaxed">
+                    <!-- Metode 1: Siap Pakai -->
+                    <div class="p-4 rounded-xl bg-white border border-emerald-200 shadow-sm">
+                        <div class="flex items-center gap-2 mb-2 font-bold text-emerald-800 text-xs">
+                            <Sparkles class="w-4 h-4 text-emerald-600" />
+                            <span>Metode 1: Siap Pakai (Rekomendasi - Cukup 1 Menit)</span>
+                        </div>
+                        <ol class="list-decimal list-inside space-y-2 text-slate-700">
+                            <li>
+                                <strong>Buat Google Spreadsheet</strong>: Buka <a href="https://sheets.google.com" target="_blank" class="text-emerald-600 underline font-semibold">Google Sheets</a> dan buat spreadsheet baru.
+                            </li>
+                            <li>
+                                <strong>Bagikan (Share) Spreadsheet</strong>: Klik tombol <strong>Share (Bagikan)</strong> di pojok kanan atas spreadsheet Anda, lalu tambahkan email service account aplikasi sebagai <strong>Editor</strong>:
+                                <div v-if="config.client_email" class="mt-1 flex items-center gap-2">
+                                    <code class="px-2 py-0.5 rounded bg-slate-100 font-mono text-[11px] font-bold text-slate-800 border select-all">
+                                        {{ config.client_email }}
+                                    </code>
+                                    <button
+                                        type="button"
+                                        @click="copyEmail(config.client_email)"
+                                        class="text-xs font-bold text-emerald-600 hover:underline inline-flex items-center gap-1"
+                                    >
+                                        <Copy class="w-3 h-3" />
+                                        <span>{{ copiedEmail ? 'Tersalin!' : 'Salin Email' }}</span>
+                                    </button>
+                                </div>
+                            </li>
+                            <li>
+                                <strong>Tempelkan URL di FinTrack</strong>: Salin link spreadsheet dari address bar browser Anda, klik <strong>Ubah Pengaturan</strong> di FinTrack, tempelkan link tersebut, lalu klik <strong>Simpan</strong>. Selesai!
+                            </li>
+                        </ol>
+                    </div>
+
+                    <!-- Metode 2: Power User -->
+                    <div class="p-4 rounded-xl bg-white border border-slate-200">
+                        <div class="flex items-center gap-2 mb-2 font-bold text-slate-800 text-xs">
+                            <Server class="w-4 h-4 text-slate-500" />
+                            <span>Metode 2: Menggunakan Kunci Google Cloud Sendiri (Power User / Opsional)</span>
+                        </div>
+                        <ol class="list-decimal list-inside space-y-2 text-slate-600">
+                            <li>
+                                Kunjungi <a href="https://console.cloud.google.com" target="_blank" class="text-slate-700 underline font-semibold">Google Cloud Console</a>, buat project baru, dan aktifkan <strong>Google Sheets API</strong> di menu Library.
+                            </li>
+                            <li>
+                                Masuk ke menu <em>Credentials &rarr; + Create Credentials &rarr; Service Account</em>.
+                            </li>
+                            <li>
+                                Buka service account yang baru dibuat, masuk ke tab <em>Keys &rarr; Add Key &rarr; Create new key (JSON)</em> untuk mengunduh file kredensial.
+                            </li>
+                            <li>
+                                Di form pengaturan FinTrack, buka opsi <strong>Pengaturan Lanjutan</strong> dan unggah file JSON tersebut.
+                            </li>
+                        </ol>
+                    </div>
                 </div>
             </div>
 
