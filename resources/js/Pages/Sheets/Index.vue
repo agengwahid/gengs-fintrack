@@ -67,6 +67,7 @@ function handleFileChange(event) {
     if (file) {
         selectedFileName.value = file.name;
         settingsForm.credentials_file = file;
+        settingsForm.is_enabled = true;
     }
 }
 
@@ -414,6 +415,32 @@ function getActionLabel(action) {
                         </button>
                     </div>
                 </div>
+
+                <!-- Alert jika Integrasi belum diaktifkan -->
+                <div v-if="!config.enabled" class="mt-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-800">
+                    <div class="flex items-center gap-2.5">
+                        <AlertCircle class="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Status integrasi saat ini masih <strong>Nonaktif</strong>. Klik <strong>Pengaturan</strong> dan aktifkan sakelar agar data otomatis dikirim ke spreadsheet.</span>
+                    </div>
+                    <button
+                        type="button"
+                        @click="showSettings = true"
+                        class="px-3 py-1.5 bg-amber-600 text-white font-bold rounded-lg text-xs hover:bg-amber-700 transition shrink-0 self-start sm:self-auto"
+                    >
+                        Buka Pengaturan
+                    </button>
+                </div>
+            </div>
+
+            <!-- Petunjuk Worker Lokal -->
+            <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600">
+                <div class="flex items-center gap-2">
+                    <Clock class="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Sinkronisasi berjalan di latar belakang (Database Queue). Di komputer lokal (localhost), jalankan perintah worker di terminal:</span>
+                </div>
+                <code class="px-2 py-1 bg-white border border-slate-200 rounded-lg font-mono text-[11px] font-bold text-emerald-700 select-all shrink-0">
+                    php artisan queue:work
+                </code>
             </div>
 
             <!-- Stats Overview Cards -->
