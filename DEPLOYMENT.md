@@ -349,3 +349,4 @@ pg_dump -U fintrack_user -h 127.0.0.1 fintrack_production > backup_$(date +%Y%m%
 # Restore jika diperlukan
 psql -U fintrack_user -h 127.0.0.1 fintrack_production < backup_20261031.sql
 ```
+
