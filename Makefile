@@ -47,3 +47,4 @@ sync-sheets: ## Memicu sinkronisasi manual seluruh data ke Google Sheets
 
 clean: ## Membersihkan seluruh cache Laravel (config, route, view)
 	@php artisan optimize:clear
+
