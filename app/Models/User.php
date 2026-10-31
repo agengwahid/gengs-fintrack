@@ -82,6 +82,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get user Google Sheets synchronization logs.
+     */
+    public function sheetSyncLogs(): HasMany
+    {
+        return $this->hasMany(SheetSyncLog::class);
+    }
+
+    /**
      * Seed starter accounts and categories for this user.
      */
     public function seedDefaultFinances(): void
