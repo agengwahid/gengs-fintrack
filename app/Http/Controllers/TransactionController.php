@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SyncTransactionToGoogleSheet;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
@@ -157,10 +158,15 @@ class TransactionController extends Controller
             }
         }
 
-        DB::transaction(function () use ($user, $validated) {
+        $transaction = DB::transaction(function () use ($user, $validated) {
             $transaction = $user->transactions()->create($validated);
             $this->applyBalance($transaction);
+
+            return $transaction;
         });
+
+        // Dispatch background sync to Google Sheets queue
+        SyncTransactionToGoogleSheet::dispatch($user->id, $transaction->id, 'create');
 
         return redirect()->back()->with('success', 'Transaksi berhasil disimpan!');
     }
@@ -221,6 +227,9 @@ class TransactionController extends Controller
             $this->applyBalance($transaction->fresh());
         });
 
+        // Dispatch background sync to Google Sheets queue
+        SyncTransactionToGoogleSheet::dispatch($user->id, $transaction->id, 'update');
+
         return redirect()->back()->with('success', 'Transaksi berhasil diperbarui!');
     }
 
@@ -229,12 +238,18 @@ class TransactionController extends Controller
      */
     public function destroy(Request $request, Transaction $transaction): RedirectResponse
     {
-        abort_if($transaction->user_id !== $request->user()->id, 403);
+        $user = $request->user();
+        abort_if($transaction->user_id !== $user->id, 403);
+
+        $transactionId = $transaction->id;
 
         DB::transaction(function () use ($transaction) {
             $this->revertBalance($transaction);
             $transaction->delete();
         });
+
+        // Dispatch background sync to Google Sheets queue
+        SyncTransactionToGoogleSheet::dispatch($user->id, $transactionId, 'delete');
 
         return redirect()->back()->with('success', 'Transaksi berhasil dihapus!');
     }
