@@ -48,6 +48,8 @@ Route::middleware('auth')->group(function () {
 
     // Google Sheets Integration
     Route::get('sheets', [GoogleSheetController::class, 'index'])->name('sheets.index');
+    Route::post('sheets/settings', [GoogleSheetController::class, 'updateSettings'])->name('sheets.settings.update');
+    Route::delete('sheets/credentials', [GoogleSheetController::class, 'deleteCredentials'])->name('sheets.credentials.destroy');
     Route::post('sheets/sync-all', [GoogleSheetController::class, 'syncAll'])->name('sheets.sync-all');
     Route::post('sheets/retry/{log}', [GoogleSheetController::class, 'retry'])->name('sheets.retry');
     Route::post('sheets/test-connection', [GoogleSheetController::class, 'testConnection'])->name('sheets.test-connection');

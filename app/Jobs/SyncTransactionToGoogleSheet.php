@@ -74,14 +74,17 @@ class SyncTransactionToGoogleSheet implements ShouldQueue
             $log->update(['status' => 'pending']);
         }
 
-        // 2. Check if Google Sheets is enabled and properly configured
-        if (! $sheetsService->isEnabled()) {
-            $reason = 'Integrasi Google Sheets dinonaktifkan di file .env (GOOGLE_SHEETS_ENABLED=false).';
+        $user = User::find($this->userId);
+        $sheetsService->forUser($user);
 
-            if (empty($sheetsService->getSpreadsheetId())) {
-                $reason = 'Spreadsheet ID belum dikonfigurasi di GOOGLE_SHEETS_SPREADSHEET_ID.';
-            } elseif (! $sheetsService->credentialsExist()) {
-                $reason = 'File kredensial Google Sheets (JSON) tidak ditemukan di server.';
+        // 2. Check if Google Sheets is enabled and properly configured
+        if (! $sheetsService->isEnabled($user)) {
+            $reason = 'Integrasi Google Sheets dinonaktifkan di pengaturan atau file .env.';
+
+            if (empty($sheetsService->getSpreadsheetId($user))) {
+                $reason = 'Spreadsheet ID belum dikonfigurasi di pengaturan Google Sheets.';
+            } elseif (! $sheetsService->credentialsExist($user)) {
+                $reason = 'Kredensial Service Account belum diunggah di pengaturan Google Sheets.';
             }
 
             $log->update([

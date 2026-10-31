@@ -89,4 +89,3 @@ class SheetSyncLog extends Model
         return $query->where('status', 'success');
     }
 }
-
