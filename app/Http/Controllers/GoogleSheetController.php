@@ -25,6 +25,9 @@ class GoogleSheetController extends Controller
         $credentialsExist = $sheetsService->credentialsExist($user);
         $isReady = $sheetsService->isEnabled($user);
         $isEnabled = $setting ? (bool) $setting->is_enabled : (bool) config('services.google_sheets.enabled', false);
+        $hasCustomCredentials = (bool) $setting?->hasCredentials();
+        $hasGlobalCredentials = $sheetsService->hasGlobalCredentials();
+        $clientEmail = $sheetsService->getClientEmail($user);
 
         $stats = [
             'total' => $user->sheetSyncLogs()->count(),
@@ -47,9 +50,11 @@ class GoogleSheetController extends Controller
                 'spreadsheet_url' => $spreadsheetId ? "https://docs.google.com/spreadsheets/d/{$spreadsheetId}/edit" : null,
                 'credentials_path' => config('services.google_sheets.credentials_path', 'storage/app/google/credentials.json'),
                 'credentials_exist' => $credentialsExist,
-                'client_email' => $setting?->client_email,
+                'client_email' => $clientEmail,
                 'project_id' => $setting?->project_id,
-                'has_custom_credentials' => (bool) $setting?->hasCredentials(),
+                'has_custom_credentials' => $hasCustomCredentials,
+                'has_global_credentials' => $hasGlobalCredentials,
+                'is_server_managed' => $hasGlobalCredentials && ! $hasCustomCredentials,
                 'last_tested_at' => $setting?->last_tested_at,
                 'last_test_status' => $setting?->last_test_status,
                 'last_test_message' => $setting?->last_test_message,

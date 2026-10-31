@@ -96,6 +96,35 @@ class GoogleSheetsService
     }
 
     /**
+     * Check if global server credentials exist on disk.
+     */
+    public function hasGlobalCredentials(): bool
+    {
+        return file_exists($this->getCredentialsPath());
+    }
+
+    /**
+     * Get the active service account client email.
+     */
+    public function getClientEmail(?User $user = null): ?string
+    {
+        $u = $user ?? $this->user;
+
+        if ($u && $u->googleSheetSetting && ! empty($u->googleSheetSetting->client_email)) {
+            return $u->googleSheetSetting->client_email;
+        }
+
+        $path = $this->getCredentialsPath();
+        if (file_exists($path)) {
+            $content = json_decode(file_get_contents($path), true);
+
+            return $content['client_email'] ?? null;
+        }
+
+        return null;
+    }
+
+    /**
      * Get or initialize Google Client.
      */
     public function getClient(?User $user = null): GoogleClient
