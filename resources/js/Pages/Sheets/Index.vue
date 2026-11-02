@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, router, Link, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import HeaderActionButton from '@/Components/HeaderActionButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
@@ -166,34 +167,35 @@ function getActionLabel(action) {
         </template>
 
         <template #actions>
-            <div class="flex items-center gap-2">
-                <button
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <HeaderActionButton
                     @click="showSettings = !showSettings"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200/80 shadow-sm transition"
-                >
-                    <Settings2 class="w-4 h-4 text-emerald-600" />
-                    <span>Pengaturan</span>
-                </button>
+                    label="Pengaturan"
+                    short-label="Atur"
+                    variant="secondary"
+                    :icon="Settings2"
+                    icon-class="text-emerald-600"
+                />
 
-                <button
+                <HeaderActionButton
                     @click="testConnection"
                     :disabled="isTesting"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200/80 shadow-sm transition disabled:opacity-50"
-                >
-                    <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': isTesting }" />
-                    <span>{{ isTesting ? 'Menguji...' : 'Uji Koneksi' }}</span>
-                </button>
+                    :label="isTesting ? 'Menguji...' : 'Uji Koneksi'"
+                    :short-label="isTesting ? 'Uji...' : 'Uji'"
+                    variant="secondary"
+                    :icon="RefreshCw"
+                    :icon-class="isTesting ? 'animate-spin text-emerald-600' : 'text-slate-600'"
+                />
 
-                <button
+                <HeaderActionButton
                     @click="syncAll"
                     :disabled="isSyncingAll || !config.is_ready"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition disabled:opacity-50"
-                    title="Kirim semua transaksi ke spreadsheet"
-                >
-                    <Send class="w-4 h-4" :class="{ 'animate-pulse': isSyncingAll }" />
-                    <span class="hidden sm:inline">{{ isSyncingAll ? 'Memproses...' : 'Sinkronkan Semua Transaksi' }}</span>
-                    <span class="sm:hidden">Sinkron Semua</span>
-                </button>
+                    :label="isSyncingAll ? 'Memproses...' : 'Sinkronkan Semua'"
+                    :short-label="isSyncingAll ? 'Proses...' : 'Sinkron'"
+                    variant="primary"
+                    :icon="Send"
+                    :icon-class="isSyncingAll ? 'animate-pulse' : ''"
+                />
             </div>
         </template>
 
