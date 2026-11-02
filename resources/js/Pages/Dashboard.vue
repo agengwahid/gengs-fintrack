@@ -3,6 +3,8 @@ import { ref, onMounted, watch, nextTick } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DynamicIcon from '@/Components/DynamicIcon.vue';
+import HeaderActionButton from '@/Components/HeaderActionButton.vue';
+import MonthYearPicker from '@/Components/MonthYearPicker.vue';
 import Chart from 'chart.js/auto';
 import { formatRupiah, formatDateIndo, formatPeriodIndo } from '@/Utils/formatters';
 import {
@@ -245,57 +247,34 @@ watch(
         </template>
 
         <template #actions>
-            <div class="flex items-center gap-2">
-                <Link
-                    :href="route('transactions.index')"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition"
-                >
-                    <Plus class="w-4 h-4" />
-                    <span>Catat Transaksi</span>
-                </Link>
-            </div>
+            <HeaderActionButton
+                as="link"
+                :href="route('transactions.index')"
+                label="Catat Transaksi"
+                short-label="Catat"
+                :icon="Plus"
+            />
         </template>
 
         <div class="space-y-6">
             <!-- Period Navigation Bar -->
-            <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div class="flex items-center gap-2">
-                    <button
-                        @click="prevMonth"
-                        class="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
-                        title="Bulan Sebelumnya"
-                    >
-                        <ChevronLeft class="w-5 h-5" />
-                    </button>
-
-                    <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 font-bold text-base sm:text-lg">
-                        <Calendar class="w-5 h-5 text-emerald-600 shrink-0" />
-                        <span>{{ formatPeriodIndo(period) }}</span>
-                    </div>
-
-                    <button
-                        @click="nextMonth"
-                        class="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
-                        title="Bulan Berikutnya"
-                    >
-                        <ChevronRight class="w-5 h-5" />
-                    </button>
-
-                    <button
-                        @click="currentMonth"
-                        class="ml-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition"
-                    >
-                        Bulan Ini
-                    </button>
-                </div>
+            <div class="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <MonthYearPicker
+                    :model-value="period"
+                    @change="changePeriod"
+                    variant="inline"
+                />
 
                 <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-500 font-medium hidden md:inline">
+                        Ringkasan performa finansial bulan kalender.
+                    </span>
                     <Link
                         :href="route('reports.index')"
                         class="text-xs font-semibold text-slate-600 hover:text-emerald-600 transition flex items-center gap-1"
                     >
                         <span>Lihat Laporan Lengkap</span>
-                        <ChevronRightSmall class="w-4 h-4" />
+                        <ChevronRight class="w-4 h-4" />
                     </Link>
                 </div>
             </div>

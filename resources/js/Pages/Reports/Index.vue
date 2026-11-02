@@ -3,6 +3,8 @@ import { ref, onMounted, watch, nextTick } from 'vue';
 import { Head, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DynamicIcon from '@/Components/DynamicIcon.vue';
+import HeaderActionButton from '@/Components/HeaderActionButton.vue';
+import MonthYearPicker from '@/Components/MonthYearPicker.vue';
 import Chart from 'chart.js/auto';
 import { formatRupiah, formatDateIndo, formatPeriodIndo } from '@/Utils/formatters';
 import {
@@ -216,14 +218,13 @@ watch(
         </template>
 
         <template #actions>
-            <a
+            <HeaderActionButton
+                as="a"
                 :href="exportCsvUrl()"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition"
-                title="Download CSV"
-            >
-                <Download class="w-4 h-4" />
-                <span>Ekspor CSV</span>
-            </a>
+                :icon="Download"
+                label="Ekspor CSV"
+                short-label="Ekspor"
+            />
         </template>
 
         <div class="space-y-6">
@@ -274,13 +275,12 @@ watch(
                 <!-- Input Controls Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <!-- Period Specific Input -->
-                    <div v-if="filterForm.period_type === 'monthly'">
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Pilih Bulan</label>
-                        <input
-                            type="month"
+                    <div v-if="filterForm.period_type === 'monthly'" class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Pilih Bulan & Tahun</label>
+                        <MonthYearPicker
                             v-model="filterForm.month"
                             @change="applyFilters"
-                            class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500"
+                            variant="inline"
                         />
                     </div>
 
@@ -290,20 +290,25 @@ watch(
                             type="date"
                             v-model="filterForm.date"
                             @change="applyFilters"
-                            class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500"
+                            class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500 font-semibold"
                         />
                     </div>
 
                     <div v-else-if="filterForm.period_type === 'yearly'">
                         <label class="block text-xs font-bold text-slate-600 mb-1">Pilih Tahun</label>
-                        <input
-                            type="number"
-                            min="2020"
-                            max="2035"
+                        <select
                             v-model="filterForm.year"
                             @change="applyFilters"
-                            class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500"
-                        />
+                            class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500 font-bold"
+                        >
+                            <option
+                                v-for="y in [2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030]"
+                                :key="y"
+                                :value="String(y)"
+                            >
+                                Tahun {{ y }}
+                            </option>
+                        </select>
                     </div>
 
                     <template v-else-if="filterForm.period_type === 'custom'">
@@ -312,16 +317,25 @@ watch(
                             <input
                                 type="date"
                                 v-model="filterForm.start_date"
-                                class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500"
+                                class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500 font-semibold"
                             />
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-600 mb-1">Sampai Tanggal</label>
-                            <input
-                                type="date"
-                                v-model="filterForm.end_date"
-                                class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500"
-                            />
+                            <div class="flex items-center gap-2">
+                                <input
+                                    type="date"
+                                    v-model="filterForm.end_date"
+                                    class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500 font-semibold"
+                                />
+                                <button
+                                    type="button"
+                                    @click="applyFilters"
+                                    class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shrink-0"
+                                >
+                                    Terapkan
+                                </button>
+                            </div>
                         </div>
                     </template>
 

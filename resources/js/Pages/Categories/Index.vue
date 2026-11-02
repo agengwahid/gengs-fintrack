@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DynamicIcon from '@/Components/DynamicIcon.vue';
+import HeaderActionButton from '@/Components/HeaderActionButton.vue';
 import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -139,13 +140,11 @@ function executeDelete() {
         </template>
 
         <template #actions>
-            <button
+            <HeaderActionButton
                 @click="openCreateModal()"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/30 transition transform hover:-translate-y-0.5"
-            >
-                <Plus class="w-4 h-4" />
-                <span>Tambah Kategori</span>
-            </button>
+                label="Tambah Kategori"
+                short-label="Kategori"
+            />
         </template>
 
         <div class="space-y-6">

@@ -2,6 +2,8 @@
 import { ref, computed, watch } from 'vue';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import HeaderActionButton from '@/Components/HeaderActionButton.vue';
+import MonthYearPicker from '@/Components/MonthYearPicker.vue';
 import DynamicIcon from '@/Components/DynamicIcon.vue';
 import Modal from '@/Components/Modal.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -77,6 +79,11 @@ function applyFilters() {
     });
 }
 
+function onMonthChange(newMonth) {
+    filterForm.value.month = newMonth;
+    applyFilters();
+}
+
 function resetFilters() {
     filterForm.value = {
         search: '',
@@ -87,6 +94,17 @@ function resetFilters() {
     };
     applyFilters();
 }
+
+const isAnyFilterActive = computed(() => {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    return Boolean(
+        filterForm.value.search ||
+        filterForm.value.type ||
+        filterForm.value.account_id ||
+        filterForm.value.category_id ||
+        filterForm.value.month !== currentMonth
+    );
+});
 
 // Transaction Modal State
 const isModalOpen = ref(false);
@@ -230,16 +248,29 @@ function executeDelete() {
         </template>
 
         <template #actions>
-            <button
+            <HeaderActionButton
                 @click="openCreateModal('expense')"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/30 transition transform hover:-translate-y-0.5"
-            >
-                <Plus class="w-4 h-4" />
-                <span>Catat Transaksi</span>
-            </button>
+                label="Catat Transaksi"
+                short-label="Catat"
+                :icon="Plus"
+            />
         </template>
 
         <div class="space-y-6">
+            <!-- Period Navigation Bar -->
+            <div class="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <MonthYearPicker
+                    :model-value="filterForm.month"
+                    @change="onMonthChange"
+                    variant="inline"
+                />
+
+                <div class="text-xs text-slate-500 flex items-center gap-1.5">
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Menampilkan transaksi periode <span class="font-bold text-slate-700">{{ formatPeriodIndo(filterForm.month) }}</span>
+                </div>
+            </div>
+
             <!-- Summary Stats for Selected Month -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <!-- Total Income -->
@@ -296,19 +327,7 @@ function executeDelete() {
 
             <!-- Filters Toolbar -->
             <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                    <!-- Period / Month -->
-                    <div>
-                        <InputLabel for="filter-month" value="Periode Bulan" class="text-xs mb-1" />
-                        <input
-                            id="filter-month"
-                            type="month"
-                            v-model="filterForm.month"
-                            @change="applyFilters"
-                            class="block w-full rounded-xl border-slate-300 text-xs sm:text-sm focus:border-emerald-500 focus:ring-emerald-500"
-                        />
-                    </div>
-
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <!-- Type Filter -->
                     <div>
                         <InputLabel for="filter-type" value="Tipe Transaksi" class="text-xs mb-1" />
@@ -393,7 +412,7 @@ function executeDelete() {
                         Menampilkan {{ transactions.total }} transaksi
                     </span>
                     <button
-                        v-if="filterForm.search || filterForm.type || filterForm.account_id || filterForm.category_id || filterForm.month !== new Date().toISOString().slice(0, 7)"
+                        v-if="isAnyFilterActive"
                         @click="resetFilters"
                         class="inline-flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-700 font-semibold"
                     >

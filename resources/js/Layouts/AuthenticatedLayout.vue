@@ -191,30 +191,30 @@ function isActive(routeName) {
             <div class="flex-1 lg:pl-64 flex flex-col min-w-0">
                 <!-- Top Navbar -->
                 <header class="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200">
-                    <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
-                        <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-between px-3 sm:px-6 lg:px-8 h-16 gap-2">
+                        <div class="flex items-center gap-2 sm:gap-3 min-w-0">
                             <button
                                 @click="mobileMenuOpen = true"
-                                class="p-2 rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden"
+                                class="p-1.5 sm:p-2 rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden shrink-0"
                                 aria-label="Buka menu"
                             >
-                                <Menu class="w-6 h-6" />
+                                <Menu class="w-5 h-5 sm:w-6 sm:h-6" />
                             </button>
 
-                            <h1 class="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <h1 class="text-base sm:text-xl font-bold text-slate-800 flex items-center gap-2 truncate">
                                 <slot name="header">FinTrack</slot>
                             </h1>
                         </div>
 
                         <!-- Top actions -->
-                        <div class="flex items-center gap-2 sm:gap-4">
+                        <div class="flex items-center gap-2 shrink-0">
                             <slot name="actions" />
 
                             <!-- User badge on mobile -->
-                            <div class="relative lg:hidden">
+                            <div class="relative lg:hidden shrink-0">
                                 <Link
                                     :href="route('profile.edit')"
-                                    class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-sm"
+                                    class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs sm:text-sm"
                                 >
                                     {{ ($page.props.auth?.user?.name || 'U').charAt(0).toUpperCase() }}
                                 </Link>
