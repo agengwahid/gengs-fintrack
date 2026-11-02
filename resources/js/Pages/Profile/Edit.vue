@@ -13,6 +13,10 @@ defineProps({
     status: {
         type: String,
     },
+    hasPassword: {
+        type: Boolean,
+        default: true,
+    },
 });
 </script>
 
@@ -91,13 +95,17 @@ defineProps({
                         <Lock class="w-5 h-5" />
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-900">Perbarui Kata Sandi</h3>
-                        <p class="text-xs text-slate-500">Pastikan akun Anda menggunakan kata sandi yang kuat dan aman</p>
+                        <h3 class="text-sm font-bold text-slate-900">
+                            {{ hasPassword ? 'Perbarui Kata Sandi' : 'Buat Kata Sandi FinTrack' }}
+                        </h3>
+                        <p class="text-xs text-slate-500">
+                            {{ hasPassword ? 'Pastikan akun Anda menggunakan kata sandi yang kuat dan aman' : 'Buat kata sandi agar Anda dapat masuk manual menggunakan email dan kata sandi' }}
+                        </p>
                     </div>
                 </div>
 
                 <div class="mt-5">
-                    <UpdatePasswordForm />
+                    <UpdatePasswordForm :has-password="hasPassword" />
                 </div>
             </div>
 
