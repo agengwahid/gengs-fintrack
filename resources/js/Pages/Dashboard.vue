@@ -252,6 +252,7 @@ watch(
                 :href="route('transactions.index')"
                 label="Catat Transaksi"
                 short-label="Catat"
+                :icon="Plus"
             />
         </template>
 

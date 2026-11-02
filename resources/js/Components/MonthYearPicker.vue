@@ -209,3 +209,4 @@ function goToCurrentMonth() {
         </button>
     </div>
 </template>
+
