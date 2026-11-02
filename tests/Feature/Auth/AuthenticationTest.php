@@ -39,3 +39,21 @@ test('users can logout', function () {
     $this->assertGuest();
     $response->assertRedirect('/');
 });
+
+test('user registered via google without password gets helpful error message when attempting manual login', function () {
+    $user = User::factory()->create([
+        'email' => 'google.user@example.com',
+        'password' => null,
+        'google_id' => 'google-999',
+    ]);
+
+    $response = $this->post('/login', [
+        'email' => 'google.user@example.com',
+        'password' => 'some-attempted-password',
+    ]);
+
+    $this->assertGuest();
+    $response->assertSessionHasErrors([
+        'email' => 'Akun ini terdaftar menggunakan Google. Silakan klik tombol "Masuk dengan Google" di atas, atau gunakan "Lupa sandi?" untuk membuat kata sandi baru.',
+    ]);
+});

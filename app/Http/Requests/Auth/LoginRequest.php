@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -44,6 +45,13 @@ class LoginRequest extends FormRequest
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+
+            $googleUser = User::where('email', $this->string('email'))->first();
+            if ($googleUser && is_null($googleUser->password) && $googleUser->google_id) {
+                throw ValidationException::withMessages([
+                    'email' => 'Akun ini terdaftar menggunakan Google. Silakan klik tombol "Masuk dengan Google" di atas, atau gunakan "Lupa sandi?" untuk membuat kata sandi baru.',
+                ]);
+            }
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),

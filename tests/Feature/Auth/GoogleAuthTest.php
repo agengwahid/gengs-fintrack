@@ -135,4 +135,3 @@ test('google callback handles socialite exceptions gracefully', function () {
     $response->assertRedirect(route('login'));
     $response->assertSessionHas('error');
 });
-
