@@ -2,6 +2,7 @@
 
 use App\Jobs\SyncTransactionToGoogleSheet;
 use App\Models\GoogleSheetSetting;
+use App\Services\GoogleSheetsService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -13,9 +14,13 @@ Artisan::command('inspire', function () {
 Artisan::command('fintrack:sync-sheets', function () {
     $this->info('Memulai sinkronisasi seluruh data ke Google Sheets...');
 
+    $hasGlobalCreds = app(GoogleSheetsService::class)->hasGlobalCredentials();
+
     $settings = GoogleSheetSetting::where('is_enabled', true)
         ->whereNotNull('spreadsheet_id')
-        ->whereNotNull('service_account_credentials')
+        ->when(! $hasGlobalCreds, function ($query) {
+            $query->whereNotNull('service_account_credentials');
+        })
         ->get();
 
     $count = 0;
