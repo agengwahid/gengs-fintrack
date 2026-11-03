@@ -236,7 +236,11 @@ function deleteBudget() {
                         <span>Sisa Anggaran</span>
                         <div
                             class="w-8 h-8 rounded-xl flex items-center justify-center"
-                            :class="summary.total_remaining >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'"
+                            :class="{
+                                'bg-emerald-50 text-emerald-600': summary.total_remaining > 0,
+                                'bg-blue-50 text-blue-600': summary.total_remaining === 0,
+                                'bg-rose-50 text-rose-600': summary.total_remaining < 0,
+                            }"
                         >
                             <CheckCircle2 v-if="summary.total_remaining >= 0" class="w-4 h-4" />
                             <AlertTriangle v-else class="w-4 h-4" />
@@ -244,12 +248,23 @@ function deleteBudget() {
                     </div>
                     <div
                         class="mt-2 text-2xl font-black tracking-tight"
-                        :class="summary.total_remaining >= 0 ? 'text-slate-900' : 'text-rose-600'"
+                        :class="{
+                            'text-slate-900': summary.total_remaining > 0,
+                            'text-blue-700': summary.total_remaining === 0,
+                            'text-rose-600': summary.total_remaining < 0,
+                        }"
                     >
                         {{ formatRupiah(summary.total_remaining) }}
                     </div>
-                    <div class="mt-1 text-xs font-medium" :class="summary.total_remaining >= 0 ? 'text-emerald-600' : 'text-rose-600'">
-                        {{ summary.total_remaining >= 0 ? 'Dana masih tersedia' : 'Overbudget / Defisit' }}
+                    <div
+                        class="mt-1 text-xs font-medium"
+                        :class="{
+                            'text-emerald-600': summary.total_remaining > 0,
+                            'text-blue-600': summary.total_remaining === 0,
+                            'text-rose-600': summary.total_remaining < 0,
+                        }"
+                    >
+                        {{ summary.total_remaining > 0 ? 'Dana masih tersedia' : (summary.total_remaining === 0 ? 'Anggaran terpakai 100% (pas)' : 'Overbudget / Defisit') }}
                     </div>
                 </div>
 
@@ -264,7 +279,8 @@ function deleteBudget() {
                                     'bg-emerald-100 text-emerald-700': summary.overall_percentage < 75,
                                     'bg-amber-100 text-amber-700': summary.overall_percentage >= 75 && summary.overall_percentage < 90,
                                     'bg-orange-100 text-orange-700': summary.overall_percentage >= 90 && summary.overall_percentage < 100,
-                                    'bg-rose-100 text-rose-700': summary.overall_percentage >= 100,
+                                    'bg-blue-100 text-blue-700': summary.overall_percentage === 100,
+                                    'bg-rose-100 text-rose-700': summary.overall_percentage > 100,
                                 }"
                             >
                                 {{ summary.overall_percentage }}%
@@ -283,7 +299,8 @@ function deleteBudget() {
                                     'bg-emerald-500': summary.overall_percentage < 75,
                                     'bg-amber-500': summary.overall_percentage >= 75 && summary.overall_percentage < 90,
                                     'bg-orange-500': summary.overall_percentage >= 90 && summary.overall_percentage < 100,
-                                    'bg-rose-500': summary.overall_percentage >= 100,
+                                    'bg-blue-600': summary.overall_percentage === 100,
+                                    'bg-rose-500': summary.overall_percentage > 100,
                                 }"
                                 :style="{ width: `${Math.min(summary.overall_percentage, 100)}%` }"
                             ></div>
@@ -298,7 +315,7 @@ function deleteBudget() {
                     v-for="b in budgets"
                     :key="b.id"
                     class="bg-white rounded-2xl p-5 border shadow-sm transition hover:shadow-md flex flex-col justify-between"
-                    :class="b.is_over_budget ? 'border-rose-200 ring-1 ring-rose-200' : 'border-slate-200/80'"
+                    :class="b.percentage > 100 ? 'border-rose-200 ring-1 ring-rose-200' : (b.percentage === 100 ? 'border-blue-200 ring-1 ring-blue-100' : 'border-slate-200/80')"
                 >
                     <div>
                         <!-- Header: Icon, Category Name, & Actions -->
@@ -356,7 +373,8 @@ function deleteBudget() {
                                         'bg-emerald-500': b.percentage < 70,
                                         'bg-amber-500': b.percentage >= 70 && b.percentage < 90,
                                         'bg-orange-500': b.percentage >= 90 && b.percentage < 100,
-                                        'bg-rose-500': b.percentage >= 100,
+                                        'bg-blue-600': b.percentage === 100,
+                                        'bg-rose-500': b.percentage > 100,
                                     }"
                                     :style="{ width: `${Math.min(b.percentage, 100)}%` }"
                                 ></div>
@@ -364,15 +382,30 @@ function deleteBudget() {
 
                             <!-- Remaining & Status Info -->
                             <div class="flex items-center justify-between text-xs pt-1">
-                                <div class="font-bold" :class="b.is_over_budget ? 'text-rose-600' : 'text-slate-600'">
-                                    {{ b.percentage }}% Terpakai
+                                <div
+                                    class="font-bold"
+                                    :class="{
+                                        'text-rose-600': b.percentage > 100,
+                                        'text-blue-700': b.percentage === 100,
+                                        'text-slate-600': b.percentage < 100,
+                                    }"
+                                >
+                                    <span v-if="b.percentage === 100">100% Terpakai Penuh</span>
+                                    <span v-else>{{ b.percentage }}% Terpakai</span>
                                 </div>
                                 <div
                                     class="font-semibold"
-                                    :class="b.is_over_budget ? 'text-rose-600 font-bold' : 'text-emerald-600'"
+                                    :class="{
+                                        'text-rose-600 font-bold': b.percentage > 100,
+                                        'text-slate-700 font-bold': b.percentage === 100,
+                                        'text-emerald-600': b.percentage < 100,
+                                    }"
                                 >
-                                    <span v-if="b.is_over_budget">
+                                    <span v-if="b.percentage > 100">
                                         Lebih {{ formatRupiah(Math.abs(b.remaining)) }}
+                                    </span>
+                                    <span v-else-if="b.percentage === 100">
+                                        Sisa Rp 0 (Pas)
                                     </span>
                                     <span v-else>
                                         Sisa {{ formatRupiah(b.remaining) }}
@@ -382,13 +415,22 @@ function deleteBudget() {
                         </div>
                     </div>
 
-                    <!-- Warning footer badge for overbudget -->
+                    <!-- Warning footer badge ONLY for overbudget (> 100%) -->
                     <div
-                        v-if="b.is_over_budget"
+                        v-if="b.percentage > 100"
                         class="mt-4 pt-3 border-t border-rose-100 flex items-center gap-1.5 text-xs text-rose-700 font-semibold"
                     >
                         <AlertTriangle class="w-4 h-4 shrink-0 text-rose-600" />
                         <span>Melebihi target batas pengeluaran!</span>
+                    </div>
+
+                    <!-- Info badge when exactly 100% (fully utilized, on target) -->
+                    <div
+                        v-else-if="b.percentage === 100"
+                        class="mt-4 pt-3 border-t border-blue-100 flex items-center gap-1.5 text-xs text-blue-700 font-semibold"
+                    >
+                        <CheckCircle2 class="w-4 h-4 shrink-0 text-blue-600" />
+                        <span>Anggaran terpakai 100% sesuai target.</span>
                     </div>
                 </div>
             </div>
@@ -456,13 +498,17 @@ function deleteBudget() {
                         <TextInput
                             id="amount"
                             type="number"
-                            step="1000"
+                            step="any"
                             min="1"
                             v-model="form.amount"
                             class="mt-1 block w-full rounded-xl text-sm"
-                            placeholder="Contoh: 1500000"
+                            placeholder="Contoh: 1000000"
                             required
                         />
+                        <p v-if="form.amount && !isNaN(form.amount) && Number(form.amount) > 0" class="mt-1.5 text-xs text-emerald-600 font-bold flex items-center gap-1">
+                            <span>Setara:</span>
+                            <span class="text-sm font-extrabold text-slate-900">{{ formatRupiah(form.amount) }}</span>
+                        </p>
                         <InputError class="mt-1.5" :message="form.errors.amount" />
                     </div>
 

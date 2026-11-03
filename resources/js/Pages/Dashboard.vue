@@ -382,10 +382,14 @@ watch(
                                 :class="{
                                     'bg-emerald-100 text-emerald-700': budgetSummary.percentage < 75,
                                     'bg-amber-100 text-amber-700': budgetSummary.percentage >= 75 && budgetSummary.percentage < 90,
-                                    'bg-rose-100 text-rose-700': budgetSummary.percentage >= 90,
+                                    'bg-orange-100 text-orange-700': budgetSummary.percentage >= 90 && budgetSummary.percentage < 100,
+                                    'bg-blue-100 text-blue-700': budgetSummary.percentage === 100,
+                                    'bg-rose-100 text-rose-700': budgetSummary.percentage > 100,
                                 }"
                             >
-                                {{ budgetSummary.percentage }}% Terpakai
+                                <span v-if="budgetSummary.percentage === 100">100% Terpakai (Pas)</span>
+                                <span v-else-if="budgetSummary.percentage > 100">{{ budgetSummary.percentage }}% (Melebihi)</span>
+                                <span v-else>{{ budgetSummary.percentage }}% Terpakai</span>
                             </span>
                         </div>
                         <p v-if="budgetSummary.count > 0" class="text-xs text-slate-500 mt-1">
