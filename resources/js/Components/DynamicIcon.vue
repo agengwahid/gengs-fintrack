@@ -30,7 +30,8 @@ import {
     Tags,
     Folder,
     HelpCircle,
-    MoreHorizontal
+    MoreHorizontal,
+    Target
 } from '@lucide/vue';
 
 const props = defineProps({
@@ -75,6 +76,7 @@ const iconMap = {
     Folder,
     HelpCircle,
     MoreHorizontal,
+    Target,
 };
 
 const iconComponent = computed(() => {

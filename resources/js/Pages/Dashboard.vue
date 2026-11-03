@@ -13,7 +13,7 @@ import {
     ArrowDownRight,
     TrendingUp,
     TrendingDown,
-    PiggyBank,
+    Target,
     ArrowLeftRight,
     Calendar,
     ChevronLeft,
@@ -371,7 +371,7 @@ watch(
             <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div class="flex items-center gap-4 min-w-0">
                     <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                        <PiggyBank class="w-6 h-6" />
+                        <Target class="w-6 h-6" />
                     </div>
                     <div class="min-w-0">
                         <div class="flex items-center gap-2">

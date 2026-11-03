@@ -15,7 +15,7 @@ import DangerButton from '@/Components/DangerButton.vue';
 import { formatRupiah, formatPeriodIndo } from '@/Utils/formatters';
 import {
     Plus,
-    PiggyBank,
+    Target,
     TrendingDown,
     AlertTriangle,
     CheckCircle2,
@@ -168,7 +168,7 @@ function deleteBudget() {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center gap-2">
-                <PiggyBank class="w-6 h-6 text-emerald-600" />
+                <Target class="w-6 h-6 text-emerald-600" />
                 <span>Anggaran Bulanan</span>
             </div>
         </template>
@@ -203,7 +203,7 @@ function deleteBudget() {
                     <div class="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider">
                         <span>Total Anggaran</span>
                         <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                            <PiggyBank class="w-4 h-4" />
+                            <Target class="w-4 h-4" />
                         </div>
                     </div>
                     <div class="mt-2 text-2xl font-black text-slate-900 tracking-tight">
@@ -441,7 +441,7 @@ function deleteBudget() {
                 class="bg-white rounded-3xl p-10 sm:p-14 border border-slate-200/80 shadow-sm text-center max-w-xl mx-auto"
             >
                 <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <PiggyBank class="w-8 h-8" />
+                    <Target class="w-8 h-8" />
                 </div>
                 <h3 class="text-xl font-bold text-slate-800">Belum Ada Anggaran di {{ formatPeriodIndo(period) }}</h3>
                 <p class="text-sm text-slate-500 mt-2 leading-relaxed">
