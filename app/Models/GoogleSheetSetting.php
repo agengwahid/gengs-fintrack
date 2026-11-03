@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\GoogleSheetsService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -107,6 +108,8 @@ class GoogleSheetSetting extends Model
      */
     public function isReady(): bool
     {
-        return $this->is_enabled && $this->hasCredentials() && $this->hasValidSpreadsheet();
+        $hasCredentials = $this->hasCredentials() || app(GoogleSheetsService::class)->hasGlobalCredentials();
+
+        return $this->is_enabled && $hasCredentials && $this->hasValidSpreadsheet();
     }
 }

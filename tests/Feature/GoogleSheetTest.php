@@ -321,6 +321,16 @@ test('user can delete saved service account credentials', function () {
     expect($setting->service_account_credentials)->toBeNull();
 });
 
+test('google sheet setting isReady returns true when user uses server global credentials without custom credentials', function () {
+    $setting = new GoogleSheetSetting([
+        'is_enabled' => true,
+        'spreadsheet_id' => 'sample-sheet-id-xyz',
+        'service_account_credentials' => null,
+    ]);
+
+    expect($setting->isReady())->toBeTrue();
+});
+
 test('artisan command fintrack:sync-sheets dispatches sync jobs for enabled users', function () {
     Queue::fake();
 
