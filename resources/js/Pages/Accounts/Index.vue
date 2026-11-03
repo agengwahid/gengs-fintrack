@@ -19,7 +19,7 @@ import {
     Building2,
     Smartphone,
     CreditCard,
-    PiggyBank,
+    TrendingUp,
     Coins,
     Landmark,
     Pencil,
@@ -50,13 +50,13 @@ const accountTypes = [
     { value: 'cash', label: 'Uang Tunai', icon: 'Wallet' },
     { value: 'bank', label: 'Rekening Bank', icon: 'Building2' },
     { value: 'ewallet', label: 'E-Wallet', icon: 'Smartphone' },
-    { value: 'investment', label: 'Investasi', icon: 'PiggyBank' },
+    { value: 'investment', label: 'Investasi', icon: 'TrendingUp' },
     { value: 'credit_card', label: 'Kartu Kredit', icon: 'CreditCard' },
     { value: 'other', label: 'Lainnya', icon: 'Coins' },
 ];
 
 const availableIcons = [
-    'Wallet', 'Building2', 'Smartphone', 'CreditCard', 'PiggyBank', 'Coins', 'Landmark'
+    'Wallet', 'Building2', 'Smartphone', 'CreditCard', 'TrendingUp', 'Coins', 'Landmark'
 ];
 
 const availableColors = [
