@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { Head, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DynamicIcon from '@/Components/DynamicIcon.vue';
@@ -98,6 +98,49 @@ function resetFilters() {
     };
     applyFilters();
 }
+
+const availableYears = computed(() => {
+    const today = new Date().getFullYear();
+    const active = parseInt(filterForm.value.year, 10) || today;
+
+    // Responsive window: 5 years past and 5 years ahead from current year
+    let minYear = today - 5;
+    let maxYear = today + 5;
+
+    if (active < minYear) {
+        minYear = active - 1;
+    }
+    if (active > maxYear) {
+        maxYear = active + 2;
+    }
+
+    const years = [];
+    for (let y = minYear; y <= maxYear; y++) {
+        years.push(String(y));
+    }
+    return years;
+});
+
+function onCustomDateChange() {
+    if (filterForm.value.start_date && filterForm.value.end_date) {
+        applyFilters();
+    }
+}
+
+const isAnyFilterActive = computed(() => {
+    const today = new Date();
+    const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    return Boolean(
+        filterForm.value.period_type !== 'monthly' ||
+        filterForm.value.month !== currentMonthStr ||
+        filterForm.value.type ||
+        filterForm.value.account_id ||
+        filterForm.value.category_id ||
+        filterForm.value.date ||
+        filterForm.value.start_date ||
+        filterForm.value.end_date
+    );
+});
 
 function exportCsvUrl() {
     const params = new URLSearchParams();
@@ -296,19 +339,39 @@ watch(
 
                     <div v-else-if="filterForm.period_type === 'yearly'">
                         <label class="block text-xs font-bold text-slate-600 mb-1">Pilih Tahun</label>
-                        <select
-                            v-model="filterForm.year"
-                            @change="applyFilters"
-                            class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500 font-bold"
-                        >
-                            <option
-                                v-for="y in [2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030]"
-                                :key="y"
-                                :value="String(y)"
+                        <div class="flex items-center gap-1.5">
+                            <button
+                                type="button"
+                                @click="filterForm.year = String(Number(filterForm.year) - 1); applyFilters()"
+                                class="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 active:scale-95 transition border border-slate-200/80 bg-white shrink-0"
+                                title="Tahun Sebelumnya"
+                                aria-label="Tahun Sebelumnya"
                             >
-                                Tahun {{ y }}
-                            </option>
-                        </select>
+                                <ChevronLeft class="w-4 h-4" />
+                            </button>
+                            <select
+                                v-model="filterForm.year"
+                                @change="applyFilters"
+                                class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500 font-bold bg-white"
+                            >
+                                <option
+                                    v-for="y in availableYears"
+                                    :key="y"
+                                    :value="y"
+                                >
+                                    Tahun {{ y }}
+                                </option>
+                            </select>
+                            <button
+                                type="button"
+                                @click="filterForm.year = String(Number(filterForm.year) + 1); applyFilters()"
+                                class="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 active:scale-95 transition border border-slate-200/80 bg-white shrink-0"
+                                title="Tahun Berikutnya"
+                                aria-label="Tahun Berikutnya"
+                            >
+                                <ChevronRight class="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
 
                     <template v-else-if="filterForm.period_type === 'custom'">
@@ -317,25 +380,18 @@ watch(
                             <input
                                 type="date"
                                 v-model="filterForm.start_date"
+                                @change="onCustomDateChange"
                                 class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500 font-semibold"
                             />
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-600 mb-1">Sampai Tanggal</label>
-                            <div class="flex items-center gap-2">
-                                <input
-                                    type="date"
-                                    v-model="filterForm.end_date"
-                                    class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500 font-semibold"
-                                />
-                                <button
-                                    type="button"
-                                    @click="applyFilters"
-                                    class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shrink-0"
-                                >
-                                    Terapkan
-                                </button>
-                            </div>
+                            <input
+                                type="date"
+                                v-model="filterForm.end_date"
+                                @change="onCustomDateChange"
+                                class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500 font-semibold"
+                            />
                         </div>
                     </template>
 
@@ -385,23 +441,19 @@ watch(
                     </div>
                 </div>
 
-                <!-- Action buttons -->
-                <div class="flex items-center justify-end gap-2 pt-2">
+                <!-- Action and Info Bar -->
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                    <span class="text-slate-400 font-medium hidden sm:inline">
+                        Laporan otomatis diperbarui seketika setiap kali Anda memilih filter.
+                    </span>
                     <button
+                        v-if="isAnyFilterActive"
                         type="button"
                         @click="resetFilters"
-                        class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition inline-flex items-center gap-1.5"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition inline-flex items-center gap-1.5 ml-auto"
                     >
                         <RotateCcw class="w-3.5 h-3.5" />
                         <span>Reset Filter</span>
-                    </button>
-                    <button
-                        type="button"
-                        @click="applyFilters"
-                        class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition inline-flex items-center gap-1.5"
-                    >
-                        <Filter class="w-3.5 h-3.5" />
-                        <span>Terapkan Filter</span>
                     </button>
                 </div>
             </div>

@@ -53,17 +53,26 @@ const currentMonth = computed(() => {
     return props.modelValue.split('-')[1];
 });
 
-// Generate year options (Current year - 3 to + 3)
+// Generate a clean, balanced dynamic year window (~10-11 years)
 const yearOptions = computed(() => {
-    const thisYear = new Date().getFullYear();
-    const years = [];
-    for (let y = thisYear - 3; y <= thisYear + 3; y++) {
-        years.push(y.toString());
+    const today = new Date().getFullYear();
+    const active = parseInt(currentYear.value, 10) || today;
+
+    // Responsive window: 5 years past and 5 years ahead from current year
+    let minYear = today - 5;
+    let maxYear = today + 5;
+
+    // Gracefully expand if active year is outside default window
+    if (active < minYear) {
+        minYear = active - 1;
     }
-    // Ensure selected year is in options if outside range
-    if (!years.includes(currentYear.value)) {
-        years.push(currentYear.value);
-        years.sort();
+    if (active > maxYear) {
+        maxYear = active + 2;
+    }
+
+    const years = [];
+    for (let y = minYear; y <= maxYear; y++) {
+        years.push(y.toString());
     }
     return years;
 });
