@@ -78,7 +78,11 @@ class DashboardController extends Controller
         $sixMonthEnd = $targetDate->toDateString();
 
         $driver = DB::connection()->getDriverName();
-        $monthExpr = $driver === 'sqlite' ? "strftime('%Y-%m', date)" : "TO_CHAR(date, 'YYYY-MM')";
+        $monthExpr = match ($driver) {
+            'sqlite' => "strftime('%Y-%m', date)",
+            'pgsql' => "TO_CHAR(date, 'YYYY-MM')",
+            default => "DATE_FORMAT(date, '%Y-%m')",
+        };
 
         $trendRows = $user->transactions()
             ->whereIn('type', ['income', 'expense'])
