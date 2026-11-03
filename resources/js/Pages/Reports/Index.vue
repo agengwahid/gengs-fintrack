@@ -100,10 +100,22 @@ function resetFilters() {
 }
 
 const availableYears = computed(() => {
-    const startYear = 2020;
-    const endYear = Math.max(2050, new Date().getFullYear() + 10);
+    const today = new Date().getFullYear();
+    const active = parseInt(filterForm.value.year, 10) || today;
+
+    // Responsive window: 5 years past and 5 years ahead from current year
+    let minYear = today - 5;
+    let maxYear = today + 5;
+
+    if (active < minYear) {
+        minYear = active - 1;
+    }
+    if (active > maxYear) {
+        maxYear = active + 2;
+    }
+
     const years = [];
-    for (let y = startYear; y <= endYear; y++) {
+    for (let y = minYear; y <= maxYear; y++) {
         years.push(String(y));
     }
     return years;
@@ -327,19 +339,39 @@ watch(
 
                     <div v-else-if="filterForm.period_type === 'yearly'">
                         <label class="block text-xs font-bold text-slate-600 mb-1">Pilih Tahun</label>
-                        <select
-                            v-model="filterForm.year"
-                            @change="applyFilters"
-                            class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500 font-bold"
-                        >
-                            <option
-                                v-for="y in availableYears"
-                                :key="y"
-                                :value="y"
+                        <div class="flex items-center gap-1.5">
+                            <button
+                                type="button"
+                                @click="filterForm.year = String(Number(filterForm.year) - 1); applyFilters()"
+                                class="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 active:scale-95 transition border border-slate-200/80 bg-white shrink-0"
+                                title="Tahun Sebelumnya"
+                                aria-label="Tahun Sebelumnya"
                             >
-                                Tahun {{ y }}
-                            </option>
-                        </select>
+                                <ChevronLeft class="w-4 h-4" />
+                            </button>
+                            <select
+                                v-model="filterForm.year"
+                                @change="applyFilters"
+                                class="w-full rounded-xl border-slate-300 text-xs focus:border-emerald-500 focus:ring-emerald-500 font-bold bg-white"
+                            >
+                                <option
+                                    v-for="y in availableYears"
+                                    :key="y"
+                                    :value="y"
+                                >
+                                    Tahun {{ y }}
+                                </option>
+                            </select>
+                            <button
+                                type="button"
+                                @click="filterForm.year = String(Number(filterForm.year) + 1); applyFilters()"
+                                class="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 active:scale-95 transition border border-slate-200/80 bg-white shrink-0"
+                                title="Tahun Berikutnya"
+                                aria-label="Tahun Berikutnya"
+                            >
+                                <ChevronRight class="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
 
                     <template v-else-if="filterForm.period_type === 'custom'">
