@@ -53,17 +53,18 @@ const currentMonth = computed(() => {
     return props.modelValue.split('-')[1];
 });
 
-// Generate year options (Current year - 3 to + 3)
+// Generate comprehensive year options (2020 up to 2050)
 const yearOptions = computed(() => {
-    const thisYear = new Date().getFullYear();
+    const startYear = 2020;
+    const endYear = Math.max(2050, new Date().getFullYear() + 10);
     const years = [];
-    for (let y = thisYear - 3; y <= thisYear + 3; y++) {
+    for (let y = startYear; y <= endYear; y++) {
         years.push(y.toString());
     }
     // Ensure selected year is in options if outside range
     if (!years.includes(currentYear.value)) {
         years.push(currentYear.value);
-        years.sort();
+        years.sort((a, b) => Number(a) - Number(b));
     }
     return years;
 });
