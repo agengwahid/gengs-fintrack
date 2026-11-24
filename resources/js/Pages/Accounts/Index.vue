@@ -27,7 +27,8 @@ import {
     Trash2,
     CheckCircle2,
     AlertTriangle,
-    Check
+    Check,
+    Copy
 } from '@lucide/vue';
 
 const props = defineProps({
@@ -46,6 +47,20 @@ const isEditing = ref(false);
 const editingAccountId = ref(null);
 const isDeleteModalOpen = ref(false);
 const accountToDelete = ref(null);
+const copiedAccountId = ref(null);
+
+function copyAccountNumber(account) {
+    if (!account.account_number) return;
+    if (navigator?.clipboard) {
+        navigator.clipboard.writeText(account.account_number);
+        copiedAccountId.value = account.id;
+        setTimeout(() => {
+            if (copiedAccountId.value === account.id) {
+                copiedAccountId.value = null;
+            }
+        }, 2000);
+    }
+}
 
 const accountTypes = [
     { value: 'cash', label: 'Uang Tunai', icon: 'Wallet' },
@@ -166,40 +181,36 @@ function getTypeLabel(type) {
             />
         </template>
 
-        <div class="space-y-6">
-            <!-- Summary Banner -->
-            <div class="bg-gradient-to-br from-emerald-600 via-teal-600 to-teal-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-emerald-950/10 relative overflow-hidden">
-                <div class="absolute right-0 bottom-0 opacity-10 translate-x-8 translate-y-8 pointer-events-none">
-                    <Wallet class="w-64 h-64" />
-                </div>
-
+        <div class="space-y-5">
+            <!-- Summary Banner (Clean, Compact Modern FinTech Header) -->
+            <div class="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-slate-900 p-5 sm:p-7 text-white shadow-lg shadow-emerald-950/10">
                 <div class="relative z-10">
-                    <div class="flex items-center gap-2 text-emerald-100 text-xs font-semibold uppercase tracking-wider">
-                        <span>Total Kekayaan Bersih</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-emerald-200/90 uppercase tracking-wider">
+                            Total Saldo Rekening
+                        </span>
+                        <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white/15 text-white backdrop-blur-sm">
+                            {{ accounts.filter(a => a.is_active).length }} Aktif
+                        </span>
                     </div>
-                    <div class="text-3xl sm:text-4xl font-black mt-2 tracking-tight">
+
+                    <div class="text-2xl sm:text-4xl font-black font-mono tracking-tight mt-2 text-white">
                         {{ formatRupiah(totalBalance) }}
                     </div>
-                    <p class="mt-2 text-xs sm:text-sm text-emerald-100/90 max-w-lg">
-                        Akumulasi saldo dari seluruh rekening & dompet aktif Anda.
-                    </p>
 
-                    <div class="mt-6 flex flex-wrap gap-4 pt-4 border-t border-white/10 text-xs">
-                        <div class="bg-white/10 backdrop-blur-sm px-3.5 py-1.5 rounded-xl flex items-center gap-2">
-                            <span class="font-bold text-white">{{ accounts.filter(a => a.is_active).length }}</span>
-                            <span class="text-emerald-100">Rekening Aktif</span>
+                    <!-- Breakdown Pills (Compact & Mobile Friendly) -->
+                    <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/10 text-xs">
+                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-2 text-center">
+                            <span class="block font-bold text-white text-sm">{{ accounts.filter(a => a.type === 'bank').length }}</span>
+                            <span class="text-[11px] text-emerald-100">Bank</span>
                         </div>
-                        <div class="bg-white/10 backdrop-blur-sm px-3.5 py-1.5 rounded-xl flex items-center gap-2">
-                            <span class="font-bold text-white">{{ accounts.filter(a => a.type === 'bank').length }}</span>
-                            <span class="text-emerald-100">Bank</span>
+                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-2 text-center">
+                            <span class="block font-bold text-white text-sm">{{ accounts.filter(a => a.type === 'ewallet').length }}</span>
+                            <span class="text-[11px] text-emerald-100">E-Wallet</span>
                         </div>
-                        <div class="bg-white/10 backdrop-blur-sm px-3.5 py-1.5 rounded-xl flex items-center gap-2">
-                            <span class="font-bold text-white">{{ accounts.filter(a => a.type === 'ewallet').length }}</span>
-                            <span class="text-emerald-100">E-Wallet</span>
-                        </div>
-                        <div class="bg-white/10 backdrop-blur-sm px-3.5 py-1.5 rounded-xl flex items-center gap-2">
-                            <span class="font-bold text-white">{{ accounts.filter(a => a.type === 'cash').length }}</span>
-                            <span class="text-emerald-100">Tunai</span>
+                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-2 text-center">
+                            <span class="block font-bold text-white text-sm">{{ accounts.filter(a => a.type === 'cash').length }}</span>
+                            <span class="text-[11px] text-emerald-100">Tunai</span>
                         </div>
                     </div>
                 </div>
@@ -207,101 +218,127 @@ function getTypeLabel(type) {
 
             <!-- Accounts Grid -->
             <div>
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-base sm:text-lg font-bold text-slate-800">Daftar Rekening Saya</h2>
+                <div class="flex items-center justify-between mb-3.5">
+                    <h2 class="text-sm sm:text-base font-bold text-slate-800">Daftar Rekening Saya</h2>
                     <span class="text-xs text-slate-500 font-medium">{{ accounts.length }} rekening terdaftar</span>
                 </div>
 
-                <div v-if="accounts.length === 0" class="bg-white rounded-3xl p-12 text-center border border-slate-200">
-                    <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
-                        <Wallet class="w-8 h-8" />
+                <div v-if="accounts.length === 0" class="bg-white rounded-3xl p-10 text-center border border-slate-200">
+                    <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+                        <Wallet class="w-7 h-7" />
                     </div>
-                    <h3 class="text-base font-bold text-slate-800">Belum Ada Rekening</h3>
+                    <h3 class="text-sm sm:text-base font-bold text-slate-800">Belum Ada Rekening</h3>
                     <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm mx-auto">
                         Mulai mencatat keuangan dengan menambahkan dompet tunai, rekening bank, atau akun e-wallet Anda.
                     </p>
                     <button
                         @click="openCreateModal"
-                        class="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition"
+                        class="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition active:scale-95"
                     >
                         <Plus class="w-4 h-4" />
                         <span>Tambah Rekening Sekarang</span>
                     </button>
                 </div>
 
-                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
                     <div
                         v-for="account in accounts"
                         :key="account.id"
-                        class="group relative bg-white rounded-2xl p-5 border transition-all duration-200 hover:shadow-lg flex flex-col justify-between"
-                        :class="account.is_active ? 'border-slate-200 hover:border-slate-300' : 'border-slate-200/60 opacity-60 bg-slate-50/50'"
+                        class="group relative bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 hover:shadow-md flex flex-col justify-between overflow-hidden"
+                        :class="account.is_active ? 'border-slate-200/90 hover:border-slate-300' : 'border-slate-200/60 opacity-60 bg-slate-50/50'"
                     >
-                        <!-- Header with Color Accent & Icon -->
+                        <!-- Top Accent Color Bar -->
+                        <div
+                            class="h-1.5 w-full absolute top-0 left-0"
+                            :style="{ backgroundColor: account.color || '#10b981' }"
+                        ></div>
+
                         <div>
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="flex items-center gap-3">
+                            <!-- Header with Color Accent & Icon -->
+                            <div class="flex items-start justify-between gap-2.5 pt-1">
+                                <div class="flex items-center gap-3 min-w-0 flex-1">
                                     <div
-                                        class="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0"
-                                        :style="{ backgroundColor: account.color || '#10b981' }"
+                                        class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                                        :style="{
+                                            backgroundColor: (account.color || '#10b981') + '18',
+                                            color: account.color || '#10b981'
+                                        }"
                                     >
-                                        <DynamicIcon :name="account.icon || 'Wallet'" class="w-6 h-6" />
+                                        <DynamicIcon :name="account.icon || 'Wallet'" class="w-5 h-5" />
                                     </div>
-                                    <div class="min-w-0">
-                                        <h3 class="text-base font-bold text-slate-800 truncate">{{ account.name }}</h3>
-                                        <div class="flex items-center gap-2 mt-0.5">
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-600">
+                                    <div class="min-w-0 flex-1">
+                                        <h3 class="text-sm sm:text-base font-bold text-slate-800 truncate">{{ account.name }}</h3>
+                                        <div class="flex items-center gap-1.5 mt-0.5">
+                                            <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">
                                                 {{ getTypeLabel(account.type) }}
                                             </span>
-                                            <span v-if="!account.is_active" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-200">
+                                            <span v-if="!account.is_active" class="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
                                                 Non-aktif
                                             </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Action Buttons -->
-                                <div class="flex items-center gap-1 opacity-90 group-hover:opacity-100 transition">
+                                <!-- Action Buttons (Touch-friendly & Always Visible) -->
+                                <div class="flex items-center gap-0.5 shrink-0">
                                     <button
+                                        type="button"
                                         @click="openEditModal(account)"
-                                        class="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition"
+                                        class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 active:scale-95 transition"
                                         title="Ubah Rekening"
+                                        aria-label="Ubah Rekening"
                                     >
-                                        <Pencil class="w-4 h-4" />
+                                        <Pencil class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     </button>
                                     <button
+                                        type="button"
                                         @click="confirmDelete(account)"
-                                        class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                                        class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-700 hover:bg-rose-50 active:scale-95 transition"
                                         title="Hapus Rekening"
+                                        aria-label="Hapus Rekening"
                                     >
-                                        <Trash2 class="w-4 h-4" />
+                                        <Trash2 class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- Account Details -->
-                            <div class="mt-4 pt-3 border-t border-slate-100 space-y-1">
-                                <div v-if="account.account_number" class="text-xs text-slate-500 flex items-center justify-between">
-                                    <span>No. Akun/Rekening</span>
-                                    <span class="font-mono font-medium text-slate-700">{{ account.account_number }}</span>
+                            <!-- Account Details: Monospace Account Number with 1-tap Copy -->
+                            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
+                                <div v-if="account.account_number" class="flex items-center gap-1.5 min-w-0">
+                                    <span class="text-slate-400 text-[10px]">No:</span>
+                                    <button
+                                        type="button"
+                                        @click="copyAccountNumber(account)"
+                                        class="inline-flex items-center gap-1 font-mono font-medium text-slate-700 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 px-2 py-0.5 rounded-md transition text-xs truncate"
+                                        :title="copiedAccountId === account.id ? 'Tersalin!' : 'Salin Nomor Rekening'"
+                                    >
+                                        <span class="truncate">{{ account.account_number }}</span>
+                                        <Check v-if="copiedAccountId === account.id" class="w-3 h-3 text-emerald-600 stroke-[3] shrink-0" />
+                                        <Copy v-else class="w-3 h-3 text-slate-400 shrink-0" />
+                                    </button>
                                 </div>
-                                <div v-if="account.description" class="text-xs text-slate-500 italic truncate">
+                                <div v-else class="text-[10px] text-slate-400">
+                                    Dompet Tunai / Akun
+                                </div>
+
+                                <div v-if="account.description" class="text-[10px] text-slate-400 italic truncate max-w-[120px]">
                                     {{ account.description }}
                                 </div>
                             </div>
                         </div>
 
                         <!-- Balance Section -->
-                        <div class="mt-4 pt-3 border-t border-slate-100">
-                            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                        <div class="mt-3 pt-2.5 border-t border-slate-100">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                 Saldo Saat Ini
                             </div>
                             <div
-                                class="text-xl sm:text-2xl font-black tracking-tight mt-0.5"
+                                class="text-xl sm:text-2xl font-black font-mono tracking-tight mt-0.5"
                                 :class="Number(account.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'"
                             >
                                 {{ formatRupiah(account.current_balance) }}
                             </div>
-                            <div class="mt-1 text-[11px] text-slate-400">
+                            <div class="mt-0.5 text-[10px] text-slate-400">
                                 Saldo awal: {{ formatRupiah(account.initial_balance) }}
                             </div>
                         </div>

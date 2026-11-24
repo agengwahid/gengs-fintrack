@@ -195,7 +195,7 @@ function goToCurrentMonth() {
             v-if="showTodayButton && !isCurrentCalendarMonth"
             type="button"
             @click="goToCurrentMonth"
-            class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 active:scale-95 transition shrink-0 ml-1"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/60 active:scale-95 transition shrink-0 whitespace-nowrap"
         >
             Bulan Ini
         </button>
