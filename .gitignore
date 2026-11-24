@@ -32,3 +32,20 @@ Thumbs.db
 /storage/app/google/*.json
 *.credentials.json
 credentials.json
+
+# Media, Video & Audio Assets (Do not push large binaries to GitHub)
+*.mp4
+*.mp3
+*.wav
+*.webm
+*.mov
+
+# Archive & Deployment Packages
+*.zip
+*.tar.gz
+*.rar
+
+# Showcase & Video Studio Local Assets
+/public/*.mp4
+/public/showcase/
+
