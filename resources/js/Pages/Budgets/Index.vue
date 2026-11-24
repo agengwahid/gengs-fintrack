@@ -184,17 +184,12 @@ function deleteBudget() {
 
         <div class="space-y-6">
             <!-- Period Navigation & Filter Bar -->
-            <div class="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-sm flex items-center justify-between gap-3">
                 <MonthYearPicker
                     :model-value="period"
                     @change="changePeriod"
                     variant="inline"
                 />
-
-                <div class="text-xs text-slate-500 flex items-center gap-1.5">
-                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-                    Target & realisasi pengeluaran bulan kalender.
-                </div>
             </div>
 
             <!-- Summary Cards -->
@@ -495,24 +490,23 @@ function deleteBudget() {
 
                     <!-- Target Nominal -->
                     <div>
-                        <InputLabel for="amount" value="Nominal Anggaran (Rp)" />
+                        <InputLabel for="amount" value="Nominal *" />
                         <MoneyInput
                             id="amount"
                             v-model="form.amount"
                             class="mt-1 block w-full rounded-xl text-sm font-mono font-bold"
-                            placeholder="Contoh: 1.000.000"
+                            placeholder="0"
                             required
                         />
-                        <p v-if="form.amount && !isNaN(form.amount) && Number(form.amount) > 0" class="mt-1.5 text-xs text-emerald-600 font-bold flex items-center gap-1">
-                            <span>Setara:</span>
-                            <span class="text-sm font-extrabold text-slate-900">{{ formatRupiah(form.amount) }}</span>
+                        <p v-if="form.amount && !isNaN(form.amount) && Number(form.amount) > 0" class="mt-1 text-xs font-semibold text-slate-500 font-mono">
+                            {{ formatRupiah(form.amount) }}
                         </p>
                         <InputError class="mt-1.5" :message="form.errors.amount" />
                     </div>
 
                     <!-- Period Input -->
                     <div>
-                        <InputLabel for="period" value="Periode Bulan" />
+                        <InputLabel for="period" value="Periode" />
                         <TextInput
                             id="period"
                             type="month"
@@ -526,13 +520,13 @@ function deleteBudget() {
 
                     <!-- Notes -->
                     <div>
-                        <InputLabel for="notes" value="Catatan Opsional" />
+                        <InputLabel for="notes" value="Catatan" />
                         <textarea
                             id="notes"
                             v-model="form.notes"
                             rows="2"
                             class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-emerald-500 focus:ring-emerald-500"
-                            placeholder="Contoh: Target hemat makan di luar"
+                            placeholder="Opsional"
                         ></textarea>
                         <InputError class="mt-1.5" :message="form.errors.notes" />
                     </div>

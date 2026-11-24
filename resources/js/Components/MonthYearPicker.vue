@@ -135,86 +135,69 @@ function goToCurrentMonth() {
 
 <template>
     <div
-        class="flex flex-wrap items-center gap-2"
+        class="flex items-center justify-between gap-1.5 w-full sm:w-auto"
         :class="variant === 'card' ? 'p-3 sm:p-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm' : ''"
     >
-        <!-- Navigasi Panah & Pemilih Bulan/Tahun -->
-        <div class="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-start">
-            <!-- Tombol Bulan Sebelumnya -->
+        <div class="flex items-center gap-1 min-w-0">
+            <!-- Tombol Prev -->
             <button
                 type="button"
                 @click="prevMonth"
-                class="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 active:scale-95 transition border border-slate-200/80 bg-white sm:border-0"
+                class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition shrink-0"
                 title="Bulan Sebelumnya"
                 aria-label="Bulan Sebelumnya"
             >
-                <ChevronLeft class="w-5 h-5" />
+                <ChevronLeft class="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
-            <!-- Box Pemilih Bulan dan Tahun yang Jelas -->
-            <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200/90 shadow-inner">
-                <Calendar class="w-4 h-4 text-emerald-600 shrink-0 hidden xs:block" />
-
-                <!-- Dropdown Pilihan Bulan Bahasa Indonesia -->
+            <!-- Box Pemilih Bulan dan Tahun -->
+            <div class="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200/90 text-xs sm:text-sm font-bold text-slate-800 shrink-0">
                 <select
                     :value="currentMonth"
                     @change="handleMonthSelect"
-                    class="bg-transparent border-0 py-0 pl-1 pr-6 text-xs sm:text-sm font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer"
+                    class="bg-transparent border-0 p-0 pr-3 sm:pr-4 text-xs sm:text-sm font-bold text-slate-800 focus:ring-0 cursor-pointer"
                     aria-label="Pilih Bulan"
                 >
-                    <option v-if="allowAllMonths" value="all">Semua Bulan</option>
-                    <option
-                        v-for="m in months"
-                        :key="m.value"
-                        :value="m.value"
-                    >
+                    <option v-if="allowAllMonths" value="all">Semua</option>
+                    <option v-for="m in months" :key="m.value" :value="m.value">
                         {{ m.label }}
                     </option>
                 </select>
 
-                <!-- Separator -->
                 <span class="text-slate-300 font-light select-none">/</span>
 
-                <!-- Dropdown Pilihan Tahun -->
                 <select
                     :value="currentYear"
                     @change="handleYearSelect"
-                    class="bg-transparent border-0 py-0 pl-1 pr-6 text-xs sm:text-sm font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer"
+                    class="bg-transparent border-0 p-0 pr-3 sm:pr-4 text-xs sm:text-sm font-bold text-slate-800 focus:ring-0 cursor-pointer"
                     aria-label="Pilih Tahun"
                 >
-                    <option
-                        v-for="y in yearOptions"
-                        :key="y"
-                        :value="y"
-                    >
+                    <option v-for="y in yearOptions" :key="y" :value="y">
                         {{ y }}
                     </option>
                 </select>
             </div>
 
-            <!-- Tombol Bulan Berikutnya -->
+            <!-- Tombol Next -->
             <button
                 type="button"
                 @click="nextMonth"
-                class="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 active:scale-95 transition border border-slate-200/80 bg-white sm:border-0"
+                class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition shrink-0"
                 title="Bulan Berikutnya"
                 aria-label="Bulan Berikutnya"
             >
-                <ChevronRight class="w-5 h-5" />
+                <ChevronRight class="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
         </div>
 
-        <!-- Tombol Cepat: Bulan Ini -->
+        <!-- Tombol Kembali ke Bulan Ini (Hanya tampil jika bukan bulan saat ini) -->
         <button
-            v-if="showTodayButton"
+            v-if="showTodayButton && !isCurrentCalendarMonth"
             type="button"
             @click="goToCurrentMonth"
-            class="px-3 py-1.5 rounded-xl text-xs font-bold transition ml-auto sm:ml-0"
-            :class="isCurrentCalendarMonth
-                ? 'bg-emerald-100 text-emerald-800 pointer-events-none'
-                : 'bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 active:scale-95'"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 active:scale-95 transition shrink-0 ml-1"
         >
-            {{ isCurrentCalendarMonth ? 'Bulan Ini' : 'Ke Bulan Ini' }}
+            Bulan Ini
         </button>
     </div>
 </template>

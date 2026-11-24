@@ -60,12 +60,12 @@ watch(
             <div
                 v-if="visible"
                 @click="dismiss"
-                class="pointer-events-auto cursor-pointer max-w-md w-full sm:w-auto flex items-center gap-3 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-md border transition-all active:scale-[0.98]"
+                class="pointer-events-auto cursor-pointer max-w-md w-full sm:w-auto flex items-center gap-3 rounded-2xl px-4 py-3 shadow-lg bg-white border transition-all active:scale-[0.98]"
                 :class="{
-                    'bg-slate-900/95 text-white border-emerald-500/30 shadow-emerald-950/20': type === 'success',
-                    'bg-slate-900/95 text-white border-rose-500/30 shadow-rose-950/20': type === 'error',
-                    'bg-slate-900/95 text-white border-amber-500/30 shadow-amber-950/20': type === 'warning',
-                    'bg-slate-900/95 text-white border-sky-500/30 shadow-sky-950/20': type === 'info',
+                    'text-slate-800 border-emerald-200 shadow-emerald-500/10': type === 'success',
+                    'text-slate-800 border-rose-200 shadow-rose-500/10': type === 'error',
+                    'text-slate-800 border-amber-200 shadow-amber-500/10': type === 'warning',
+                    'text-slate-800 border-sky-200 shadow-sky-500/10': type === 'info',
                 }"
                 role="status"
                 aria-live="polite"
@@ -73,10 +73,10 @@ watch(
                 <div
                     class="w-7 h-7 rounded-xl flex items-center justify-center shrink-0"
                     :class="{
-                        'bg-emerald-500/20 text-emerald-400': type === 'success',
-                        'bg-rose-500/20 text-rose-400': type === 'error',
-                        'bg-amber-500/20 text-amber-400': type === 'warning',
-                        'bg-sky-500/20 text-sky-400': type === 'info',
+                        'bg-emerald-50 text-emerald-600': type === 'success',
+                        'bg-rose-50 text-rose-600': type === 'error',
+                        'bg-amber-50 text-amber-600': type === 'warning',
+                        'bg-sky-50 text-sky-600': type === 'info',
                     }"
                 >
                     <CheckCircle2 v-if="type === 'success'" class="h-4 w-4" />
@@ -85,14 +85,14 @@ watch(
                     <Info v-else class="h-4 w-4" />
                 </div>
 
-                <div class="text-xs sm:text-sm font-medium flex-1 text-slate-100 leading-snug">
+                <div class="text-xs sm:text-sm font-semibold flex-1 text-slate-800 leading-snug">
                     {{ message }}
                 </div>
 
                 <button
                     type="button"
                     @click.stop="dismiss"
-                    class="rounded-lg p-1 text-slate-400 hover:text-white hover:bg-white/10 transition shrink-0 ml-1"
+                    class="rounded-lg p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition shrink-0 ml-1"
                     aria-label="Tutup notifikasi"
                 >
                     <X class="h-4 w-4" />

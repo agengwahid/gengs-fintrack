@@ -331,7 +331,7 @@ function getTypeLabel(type) {
                             v-model="form.name"
                             type="text"
                             class="mt-1 block w-full rounded-xl"
-                            placeholder="Contoh: BCA Tabungan, GoPay Utama"
+                            placeholder="Nama rekening"
                             required
                         />
                         <InputError :message="form.errors.name" class="mt-1" />
@@ -354,13 +354,13 @@ function getTypeLabel(type) {
                         </div>
 
                         <div>
-                            <InputLabel for="account_number" value="No. Rekening / HP (Opsional)" />
+                            <InputLabel for="account_number" value="No. Rekening" />
                             <TextInput
                                 id="account_number"
                                 v-model="form.account_number"
                                 type="text"
                                 class="mt-1 block w-full rounded-xl"
-                                placeholder="1234567890"
+                                placeholder="Opsional"
                             />
                             <InputError :message="form.errors.account_number" class="mt-1" />
                         </div>
@@ -368,7 +368,7 @@ function getTypeLabel(type) {
 
                     <!-- Initial Balance -->
                     <div>
-                        <InputLabel for="initial_balance" value="Saldo Awal (Rp) *" />
+                        <InputLabel for="initial_balance" value="Saldo Awal *" />
                         <MoneyInput
                             id="initial_balance"
                             v-model="form.initial_balance"
@@ -376,12 +376,8 @@ function getTypeLabel(type) {
                             placeholder="0"
                             required
                         />
-                        <p v-if="form.initial_balance !== '' && Number(form.initial_balance) > 0" class="mt-1.5 text-xs text-emerald-600 font-bold flex items-center gap-1">
-                            <span>Terbaca:</span>
-                            <span class="text-sm font-extrabold text-slate-900">{{ formatRupiah(form.initial_balance) }}</span>
-                        </p>
-                        <p class="text-[11px] text-slate-500 mt-1">
-                            Saldo awal saat rekening ini pertama kali didaftarkan.
+                        <p v-if="form.initial_balance !== '' && Number(form.initial_balance) > 0" class="mt-1 text-xs font-semibold text-slate-500 font-mono">
+                            {{ formatRupiah(form.initial_balance) }}
                         </p>
                         <InputError :message="form.errors.initial_balance" class="mt-1" />
                     </div>
@@ -423,13 +419,13 @@ function getTypeLabel(type) {
 
                     <!-- Description -->
                     <div>
-                        <InputLabel for="description" value="Catatan / Deskripsi" />
+                        <InputLabel for="description" value="Catatan" />
                         <textarea
                             id="description"
                             v-model="form.description"
                             rows="2"
                             class="mt-1 block w-full rounded-xl border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 text-sm shadow-sm"
-                            placeholder="Catatan tambahan rekening ini..."
+                            placeholder="Catatan (opsional)"
                         ></textarea>
                         <InputError :message="form.errors.description" class="mt-1" />
                     </div>
@@ -438,7 +434,7 @@ function getTypeLabel(type) {
                     <div class="flex items-center pt-1">
                         <label class="flex items-center cursor-pointer">
                             <Checkbox name="is_active" v-model:checked="form.is_active" class="text-emerald-600 rounded" />
-                            <span class="ms-2 text-sm text-slate-700 font-medium">Rekening Aktif Digunakan</span>
+                            <span class="ms-2 text-sm text-slate-700 font-medium">Rekening Aktif</span>
                         </label>
                     </div>
 

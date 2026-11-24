@@ -114,10 +114,10 @@ function handleMobileQuickAdd() {
                     @click="mobileMenuOpen = false"
                     class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
                     :class="isActive(item.routeName)
-                        ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
+                        ? 'bg-emerald-50 text-emerald-800'
                         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
                 >
-                    <component :is="item.icon" class="w-5 h-5 shrink-0" />
+                    <component :is="item.icon" class="w-5 h-5 shrink-0" :class="isActive(item.routeName) ? 'text-emerald-600' : 'text-slate-400'" />
                     <span>{{ item.name }}</span>
                 </Link>
             </nav>
@@ -144,10 +144,12 @@ function handleMobileQuickAdd() {
             >
                 <!-- Brand Header (Single branding, smoothly fades text when collapsed) -->
                 <div class="h-16 border-b border-slate-100 flex items-center px-4 overflow-hidden shrink-0">
-                    <Link :href="route('dashboard')" class="flex items-center gap-3 min-w-max">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-sm shadow-emerald-500/25 shrink-0 ml-0.5">
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                    <Link :href="route('dashboard')" class="flex items-center gap-2.5 min-w-max">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/20 shrink-0 ml-0.5">
+                            <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 19h16" stroke="currentColor" stroke-width="2" opacity="0.6" stroke-linecap="round" />
+                                <path d="M5 15l5-5 4 4 6-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                                <polyline points="16 7 21 7 21 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                         </div>
                         <span
@@ -175,10 +177,10 @@ function handleMobileQuickAdd() {
                         :title="item.name"
                         class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors duration-150 group overflow-hidden whitespace-nowrap"
                         :class="isActive(item.routeName)
-                            ? 'bg-emerald-600 text-white font-semibold shadow-sm shadow-emerald-600/30'
+                            ? 'bg-emerald-50 text-emerald-800 font-semibold'
                             : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
                     >
-                        <component :is="item.icon" class="w-5 h-5 shrink-0" />
+                        <component :is="item.icon" class="w-5 h-5 shrink-0" :class="isActive(item.routeName) ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'" />
                         <span
                             class="transition-all duration-300 truncate"
                             :class="isSidebarCollapsed ? 'opacity-0 max-w-0 -translate-x-2' : 'opacity-100 max-w-[180px] translate-x-0'"
@@ -201,10 +203,10 @@ function handleMobileQuickAdd() {
                         :title="item.name"
                         class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors duration-150 group overflow-hidden whitespace-nowrap"
                         :class="isActive(item.routeName)
-                            ? 'bg-emerald-600 text-white font-semibold shadow-sm shadow-emerald-600/30'
+                            ? 'bg-emerald-50 text-emerald-800 font-semibold'
                             : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
                     >
-                        <component :is="item.icon" class="w-5 h-5 shrink-0" />
+                        <component :is="item.icon" class="w-5 h-5 shrink-0" :class="isActive(item.routeName) ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'" />
                         <span
                             class="transition-all duration-300 truncate"
                             :class="isSidebarCollapsed ? 'opacity-0 max-w-0 -translate-x-2' : 'opacity-100 max-w-[180px] translate-x-0'"
@@ -248,16 +250,16 @@ function handleMobileQuickAdd() {
             <!-- Main Content Area -->
             <div class="flex-1 flex flex-col min-w-0 transition-[padding-left] duration-300 ease-in-out" :class="isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'">
                 <!-- Top Navbar -->
-                <header class="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200">
-                    <div class="flex items-center justify-between px-3 sm:px-6 lg:px-8 h-16 gap-2">
+                <header class="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
+                    <div class="flex items-center justify-between px-3 sm:px-6 lg:px-8 h-14 sm:h-16 gap-2">
                         <div class="flex items-center gap-2 sm:gap-3 min-w-0">
                             <!-- Mobile menu trigger -->
                             <button
                                 @click="mobileMenuOpen = true"
-                                class="p-1.5 sm:p-2 rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden shrink-0"
+                                class="p-2 rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden shrink-0"
                                 aria-label="Buka menu"
                             >
-                                <Menu class="w-5 h-5 sm:w-6 sm:h-6" />
+                                <Menu class="w-5 h-5" />
                             </button>
 
                             <!-- Desktop single sidebar toggle button -->
@@ -270,7 +272,7 @@ function handleMobileQuickAdd() {
                                 <component :is="isSidebarCollapsed ? PanelLeftOpen : PanelLeftClose" class="w-5 h-5 text-slate-600" />
                             </button>
 
-                            <h1 class="text-base sm:text-xl font-bold text-slate-800 flex items-center gap-2 truncate">
+                            <h1 class="text-base sm:text-lg font-bold text-slate-900 truncate">
                                 <slot name="header">FinTrack</slot>
                             </h1>
                         </div>
@@ -283,7 +285,7 @@ function handleMobileQuickAdd() {
                             <div class="relative lg:hidden shrink-0">
                                 <Link
                                     :href="route('profile.edit')"
-                                    class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs sm:text-sm"
+                                    class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-xs hover:bg-slate-200 transition"
                                 >
                                     {{ ($page.props.auth?.user?.name || 'U').charAt(0).toUpperCase() }}
                                 </Link>
@@ -308,7 +310,7 @@ function handleMobileQuickAdd() {
                 class="flex flex-1 flex-col items-center justify-center py-1 text-[11px] font-medium transition-colors"
                 :class="isActive('dashboard') ? 'text-emerald-600 font-bold' : 'text-slate-500 hover:text-slate-900'"
             >
-                <LayoutDashboard class="w-5 h-5 mb-0.5" />
+                <LayoutDashboard class="w-5 h-5 mb-0.5" :class="isActive('dashboard') ? 'text-emerald-600' : 'text-slate-400'" />
                 <span>Dashboard</span>
             </Link>
 
@@ -317,7 +319,7 @@ function handleMobileQuickAdd() {
                 class="flex flex-1 flex-col items-center justify-center py-1 text-[11px] font-medium transition-colors"
                 :class="isActive('transactions.index') ? 'text-emerald-600 font-bold' : 'text-slate-500 hover:text-slate-900'"
             >
-                <ArrowLeftRight class="w-5 h-5 mb-0.5" />
+                <ArrowLeftRight class="w-5 h-5 mb-0.5" :class="isActive('transactions.index') ? 'text-emerald-600' : 'text-slate-400'" />
                 <span>Transaksi</span>
             </Link>
 
@@ -326,7 +328,7 @@ function handleMobileQuickAdd() {
                 <button
                     type="button"
                     @click="handleMobileQuickAdd"
-                    class="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-emerald-950/20 ring-4 ring-white transition-all"
+                    class="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30 ring-4 ring-white transition-all"
                     aria-label="Catat Transaksi Cepat"
                     title="Catat Transaksi"
                 >
@@ -339,7 +341,7 @@ function handleMobileQuickAdd() {
                 class="flex flex-1 flex-col items-center justify-center py-1 text-[11px] font-medium transition-colors"
                 :class="isActive('accounts.index') ? 'text-emerald-600 font-bold' : 'text-slate-500 hover:text-slate-900'"
             >
-                <Wallet class="w-5 h-5 mb-0.5" />
+                <Wallet class="w-5 h-5 mb-0.5" :class="isActive('accounts.index') ? 'text-emerald-600' : 'text-slate-400'" />
                 <span>Rekening</span>
             </Link>
 

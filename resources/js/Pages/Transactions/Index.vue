@@ -307,17 +307,12 @@ function executeDelete() {
 
         <div class="space-y-6">
             <!-- Period Navigation Bar -->
-            <div class="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-sm flex items-center justify-between gap-3">
                 <MonthYearPicker
                     :model-value="filterForm.month"
                     @change="onMonthChange"
                     variant="inline"
                 />
-
-                <div class="text-xs text-slate-500 flex items-center gap-1.5">
-                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-                    Menampilkan transaksi periode <span class="font-bold text-slate-700">{{ formatPeriodIndo(filterForm.month) }}</span>
-                </div>
             </div>
 
             <!-- Summary Stats for Selected Month (Clean Data-First Architecture) -->
@@ -330,9 +325,6 @@ function executeDelete() {
                     <div class="text-xl sm:text-2xl font-bold font-mono tracking-tight text-emerald-700 mt-2">
                         +{{ formatRupiah(summary.total_income) }}
                     </div>
-                    <div class="mt-2 text-[11px] text-slate-400">
-                        Total pemasukan tercatat
-                    </div>
                 </div>
 
                 <!-- Total Expense -->
@@ -342,9 +334,6 @@ function executeDelete() {
                     </div>
                     <div class="text-xl sm:text-2xl font-bold font-mono tracking-tight text-rose-700 mt-2">
                         -{{ formatRupiah(summary.total_expense) }}
-                    </div>
-                    <div class="mt-2 text-[11px] text-slate-400">
-                        Total pengeluaran tercatat
                     </div>
                 </div>
 
@@ -364,9 +353,6 @@ function executeDelete() {
                         :class="summary.net_cashflow >= 0 ? 'text-slate-900' : 'text-rose-700'"
                     >
                         {{ formatRupiah(summary.net_cashflow) }}
-                    </div>
-                    <div class="mt-2 text-[11px] text-slate-400">
-                        Selisih uang masuk dan keluar
                     </div>
                 </div>
             </div>
@@ -490,20 +476,17 @@ function executeDelete() {
 
             <!-- Transaction List -->
             <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                <div v-if="transactions.data.length === 0" class="p-12 text-center">
-                    <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
-                        <ArrowLeftRight class="w-8 h-8" />
+                <div v-if="transactions.data.length === 0" class="p-10 text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                        <ArrowLeftRight class="w-6 h-6" />
                     </div>
-                    <h3 class="text-base font-bold text-slate-800">Tidak Ada Transaksi</h3>
-                    <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-                        Tidak ada riwayat transaksi yang cocok dengan filter yang dipilih.
-                    </p>
+                    <h3 class="text-sm font-bold text-slate-700">Tidak ada transaksi</h3>
                     <button
                         @click="openCreateModal('expense')"
-                        class="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition"
+                        class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition"
                     >
                         <Plus class="w-4 h-4" />
-                        <span>Catat Transaksi Sekarang</span>
+                        <span>Catat Transaksi</span>
                     </button>
                 </div>
 
@@ -631,17 +614,6 @@ function executeDelete() {
             </div>
         </div>
 
-        <!-- Floating Action Button for Mobile Quick Add -->
-        <button
-            type="button"
-            @click="openCreateModal('expense')"
-            class="sm:hidden fixed bottom-20 right-4 z-30 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-xl shadow-emerald-950/25 flex items-center justify-center transition-all"
-            aria-label="Catat Transaksi"
-            title="Catat Transaksi"
-        >
-            <Plus class="w-6 h-6 stroke-[2.5]" />
-        </button>
-
         <!-- Add / Edit Modal -->
         <Modal :show="isModalOpen" @close="closeModal" max-width="lg">
             <div class="p-6">
@@ -699,7 +671,7 @@ function executeDelete() {
 
                     <!-- Nominal Amount -->
                     <div>
-                        <InputLabel for="amount" value="Nominal Transaksi (Rp) *" />
+                        <InputLabel for="amount" value="Nominal *" />
                         <div class="relative mt-1">
                             <span class="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">
                                 Rp
@@ -713,9 +685,8 @@ function executeDelete() {
                                 autofocus
                             />
                         </div>
-                        <p v-if="form.amount && Number(form.amount) > 0" class="mt-1.5 text-xs text-emerald-600 font-bold flex items-center gap-1">
-                            <span>Terbaca:</span>
-                            <span class="text-sm font-extrabold text-slate-900">{{ formatRupiah(form.amount) }}</span>
+                        <p v-if="form.amount && Number(form.amount) > 0" class="mt-1 text-xs font-semibold text-slate-500 font-mono">
+                            {{ formatRupiah(form.amount) }}
                         </p>
                         <InputError :message="form.errors.amount" class="mt-1" />
                     </div>
@@ -724,7 +695,7 @@ function executeDelete() {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <!-- Date -->
                         <div>
-                            <InputLabel for="date" value="Tanggal Transaksi *" />
+                            <InputLabel for="date" value="Tanggal *" />
                             <input
                                 id="date"
                                 v-model="form.date"
@@ -738,13 +709,13 @@ function executeDelete() {
                         <!-- Time -->
                         <div>
                             <div class="flex items-center justify-between">
-                                <InputLabel for="time" value="Waktu / Jam" />
+                                <InputLabel for="time" value="Waktu" />
                                 <button
                                     type="button"
                                     @click="setCurrentTime"
                                     class="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 transition"
                                 >
-                                    Waktu Sekarang
+                                    Sekarang
                                 </button>
                             </div>
                             <input
@@ -763,7 +734,7 @@ function executeDelete() {
                         <div>
                             <InputLabel
                                 for="account_id"
-                                :value="form.type === 'transfer' ? 'Dari Rekening (Asal) *' : (form.type === 'income' ? 'Rekening Tujuan *' : 'Rekening Sumber *')"
+                                :value="form.type === 'transfer' ? 'Dari Rekening *' : 'Rekening *'"
                             />
                             <select
                                 id="account_id"
@@ -781,7 +752,7 @@ function executeDelete() {
 
                         <!-- Destination Account for Transfer -->
                         <div v-if="form.type === 'transfer'">
-                            <InputLabel for="dest_account" value="Ke Rekening (Tujuan) *" />
+                            <InputLabel for="dest_account" value="Ke Rekening *" />
                             <select
                                 id="dest_account"
                                 v-model="form.destination_account_id"
@@ -800,7 +771,7 @@ function executeDelete() {
                         <div v-else>
                             <InputLabel
                                 for="category_id"
-                                :value="form.type === 'expense' ? 'Kategori Pengeluaran *' : 'Kategori Pemasukan *'"
+                                value="Kategori *"
                             />
                             <select
                                 id="category_id"
@@ -823,26 +794,26 @@ function executeDelete() {
 
                     <!-- Notes -->
                     <div>
-                        <InputLabel for="notes" value="Catatan / Keterangan (Opsional)" />
+                        <InputLabel for="notes" value="Catatan" />
                         <textarea
                             id="notes"
                             v-model="form.notes"
                             rows="2"
                             class="mt-1 block w-full rounded-xl border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 text-sm shadow-sm"
-                            placeholder="Catatan belanja, nama toko, keperluan..."
+                            placeholder="Catatan..."
                         ></textarea>
                         <InputError :message="form.errors.notes" class="mt-1" />
                     </div>
 
                     <!-- Reference Number -->
                     <div>
-                        <InputLabel for="ref-num" value="No. Referensi / ID Transaksi (Opsional)" />
+                        <InputLabel for="ref-num" value="No. Referensi" />
                         <TextInput
                             id="ref-num"
                             v-model="form.reference_number"
                             type="text"
-                            class="mt-1 block w-full rounded-xl"
-                            placeholder="Contoh: INV-001, No. Resi, dll"
+                            class="mt-1 block w-full rounded-xl text-sm"
+                            placeholder="Opsional"
                         />
                         <InputError :message="form.errors.reference_number" class="mt-1" />
                     </div>
@@ -872,19 +843,16 @@ function executeDelete() {
         <!-- Delete Confirmation Modal -->
         <Modal :show="isDeleteModalOpen" @close="closeDeleteModal" max-width="md">
             <div class="p-6">
-                <div class="flex items-center gap-3 text-rose-600 mb-4">
-                    <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                <div class="flex items-center gap-3 text-rose-600 mb-3">
+                    <div class="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
                         <AlertTriangle class="w-5 h-5" />
                     </div>
-                    <div>
-                        <h3 class="text-base font-bold text-slate-800">Hapus Transaksi?</h3>
-                        <p class="text-xs text-slate-500">Saldo rekening akan otomatis disesuaikan kembali</p>
-                    </div>
+                    <h3 class="text-base font-bold text-slate-800">Hapus Transaksi</h3>
                 </div>
 
-                <p class="text-sm text-slate-600 leading-relaxed">
-                    Apakah Anda yakin ingin menghapus catatan transaksi senilai
-                    <strong class="text-slate-900">{{ formatRupiah(transactionToDelete?.amount) }}</strong>?
+                <p class="text-sm text-slate-600">
+                    Hapus catatan transaksi senilai
+                    <strong class="text-slate-900 font-bold">{{ formatRupiah(transactionToDelete?.amount) }}</strong>?
                 </p>
 
                 <div class="mt-6 flex items-center justify-end gap-3">
