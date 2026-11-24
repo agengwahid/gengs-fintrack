@@ -203,3 +203,56 @@ test('user cannot access or modify another users transaction', function () {
     $response->assertForbidden();
     $this->assertDatabaseHas('transactions', ['id' => $tx2->id]);
 });
+
+test('user can create transaction with custom time and time is stored', function () {
+    $user = User::factory()->create();
+    $account = Account::factory()->create([
+        'user_id' => $user->id,
+        'initial_balance' => 500000,
+        'current_balance' => 500000,
+    ]);
+    $category = Category::factory()->create([
+        'user_id' => $user->id,
+        'type' => 'expense',
+    ]);
+
+    $response = $this->actingAs($user)->post(route('transactions.store'), [
+        'type' => 'expense',
+        'amount' => 50000,
+        'date' => '2026-11-24',
+        'time' => '14:30',
+        'account_id' => $account->id,
+        'category_id' => $category->id,
+        'notes' => 'Makan siang',
+    ]);
+
+    $response->assertRedirect();
+    $tx = Transaction::where('user_id', $user->id)->first();
+    expect($tx)->not->toBeNull();
+    expect($tx->time)->toContain('14:30');
+});
+
+test('user can update transaction time', function () {
+    $user = User::factory()->create();
+    $account = Account::factory()->create(['user_id' => $user->id]);
+    $category = Category::factory()->create(['user_id' => $user->id, 'type' => 'expense']);
+    $tx = Transaction::factory()->create([
+        'user_id' => $user->id,
+        'account_id' => $account->id,
+        'category_id' => $category->id,
+        'type' => 'expense',
+        'time' => '10:00',
+    ]);
+
+    $response = $this->actingAs($user)->put(route('transactions.update', $tx), [
+        'type' => 'expense',
+        'amount' => $tx->amount,
+        'date' => $tx->date,
+        'time' => '19:45',
+        'account_id' => $account->id,
+        'category_id' => $category->id,
+    ]);
+
+    $response->assertRedirect();
+    expect($tx->fresh()->time)->toContain('19:45');
+});

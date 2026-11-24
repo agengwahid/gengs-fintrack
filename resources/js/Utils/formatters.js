@@ -64,11 +64,12 @@ export function formatTime(dateString, withWib = true) {
 
 /**
  * Format tanggal dan jam transaksi dalam format Indonesia
- * Menggabungkan tanggal transaksi (date) dan jam pencatatan (created_at).
- * Contoh: ("2026-11-02", "2026-11-02T03:40:51Z") -> "2 Nov 2026, 10:40 WIB"
+ * Menggabungkan tanggal transaksi (date) dan waktu (time atau created_at).
+ * Contoh: ("2026-11-02", "14:30") -> "2 Nov 2026, 14:30 WIB"
+ * Contoh: ("2026-11-02", null, "2026-11-02T03:40:51Z") -> "2 Nov 2026, 10:40 WIB"
  */
-export function formatTransactionDate(dateStr, timeStr = null, withWib = true) {
-    if (!dateStr && !timeStr) return '-';
+export function formatTransactionDate(dateStr, timeOrCreatedAt = null, fallbackCreatedAt = null, withWib = true) {
+    if (!dateStr && !timeOrCreatedAt && !fallbackCreatedAt) return '-';
 
     let day, month, year;
     if (dateStr) {
@@ -86,7 +87,7 @@ export function formatTransactionDate(dateStr, timeStr = null, withWib = true) {
     }
 
     if (!day || !month || !year) {
-        const d = new Date(dateStr || timeStr);
+        const d = new Date(dateStr || timeOrCreatedAt || fallbackCreatedAt);
         if (isNaN(d.getTime())) return dateStr || '-';
         day = d.getDate();
         const bulanPendek = [
@@ -97,7 +98,16 @@ export function formatTransactionDate(dateStr, timeStr = null, withWib = true) {
         year = d.getFullYear();
     }
 
-    const timeSource = timeStr || (dateStr && String(dateStr).includes('T') ? dateStr : null);
+    // 1. Explicit time string: "14:30" or "14:30:00"
+    if (timeOrCreatedAt && typeof timeOrCreatedAt === 'string' && /^\d{1,2}:\d{2}(:\d{2})?$/.test(timeOrCreatedAt.trim())) {
+        const parts = timeOrCreatedAt.trim().split(':');
+        const hours = parts[0].padStart(2, '0');
+        const minutes = parts[1].padStart(2, '0');
+        return `${day} ${month} ${year}, ${hours}:${minutes}${withWib ? ' WIB' : ''}`;
+    }
+
+    // 2. ISO datetime string (fallback or timeOrCreatedAt if ISO format)
+    const timeSource = fallbackCreatedAt || (timeOrCreatedAt && String(timeOrCreatedAt).includes('T') ? timeOrCreatedAt : null) || (dateStr && String(dateStr).includes('T') ? dateStr : null);
     if (timeSource) {
         const t = new Date(timeSource);
         if (!isNaN(t.getTime())) {

@@ -13,7 +13,7 @@ import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DangerButton from '@/Components/DangerButton.vue';
-import { formatRupiah, formatDateIndo, formatPeriodIndo, formatTransactionDate } from '@/Utils/formatters';
+import { formatRupiah, formatDateIndo, formatPeriodIndo, formatTransactionDate, formatTime } from '@/Utils/formatters';
 import {
     ArrowLeftRight,
     Plus,
@@ -115,10 +115,16 @@ const transactionToDelete = ref(null);
 
 const today = new Date().toISOString().slice(0, 10);
 
+function getCurrentTime() {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+}
+
 const form = useForm({
     type: 'expense',
     amount: '',
     date: today,
+    time: getCurrentTime(),
     account_id: '',
     destination_account_id: '',
     category_id: '',
@@ -143,6 +149,7 @@ function openCreateModal(defaultType = 'expense') {
     form.clearErrors();
     form.type = defaultType;
     form.date = today;
+    form.time = getCurrentTime();
     form.amount = '';
 
     // Set sensible default account if available
@@ -170,6 +177,7 @@ function openEditModal(tx) {
     form.type = tx.type;
     form.amount = tx.amount;
     form.date = tx.date;
+    form.time = tx.time ? String(tx.time).slice(0, 5) : (tx.created_at ? formatTime(tx.created_at, false) : getCurrentTime());
     form.account_id = tx.account_id;
     form.destination_account_id = tx.destination_account_id || '';
     form.category_id = tx.category_id || '';
@@ -182,6 +190,10 @@ function closeModal() {
     isModalOpen.value = false;
     form.reset();
     form.clearErrors();
+}
+
+function setCurrentTime() {
+    form.time = getCurrentTime();
 }
 
 function setTransactionType(type) {
@@ -491,7 +503,7 @@ function executeDelete() {
 
                                 <!-- Sub-info: Date, Account(s), Notes -->
                                 <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 mt-1">
-                                    <span class="font-medium text-slate-600">{{ formatTransactionDate(tx.date, tx.created_at) }}</span>
+                                    <span class="font-medium text-slate-600">{{ formatTransactionDate(tx.date, tx.time, tx.created_at) }}</span>
                                     <span>&bull;</span>
 
                                     <!-- Account info -->
@@ -638,17 +650,41 @@ function executeDelete() {
                         <InputError :message="form.errors.amount" class="mt-1" />
                     </div>
 
-                    <!-- Date -->
-                    <div>
-                        <InputLabel for="date" value="Tanggal Transaksi *" />
-                        <input
-                            id="date"
-                            v-model="form.date"
-                            type="date"
-                            class="mt-1 block w-full rounded-xl border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 text-sm"
-                            required
-                        />
-                        <InputError :message="form.errors.date" class="mt-1" />
+                    <!-- Date & Time -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Date -->
+                        <div>
+                            <InputLabel for="date" value="Tanggal Transaksi *" />
+                            <input
+                                id="date"
+                                v-model="form.date"
+                                type="date"
+                                class="mt-1 block w-full rounded-xl border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 text-sm"
+                                required
+                            />
+                            <InputError :message="form.errors.date" class="mt-1" />
+                        </div>
+
+                        <!-- Time -->
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <InputLabel for="time" value="Waktu / Jam" />
+                                <button
+                                    type="button"
+                                    @click="setCurrentTime"
+                                    class="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 transition"
+                                >
+                                    Waktu Sekarang
+                                </button>
+                            </div>
+                            <input
+                                id="time"
+                                v-model="form.time"
+                                type="time"
+                                class="mt-1 block w-full rounded-xl border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 text-sm"
+                            />
+                            <InputError :message="form.errors.time" class="mt-1" />
+                        </div>
                     </div>
 
                     <!-- Account & Category Fields -->

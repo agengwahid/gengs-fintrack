@@ -27,6 +27,7 @@ class Transaction extends Model
         'type',
         'amount',
         'date',
+        'time',
         'notes',
         'reference_number',
         'google_sheet_row_id',

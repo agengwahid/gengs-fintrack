@@ -499,7 +499,7 @@ watch(
                                         {{ t.notes || t.category?.name || (t.type === 'transfer' ? 'Transfer Antar Rekening' : 'Transaksi') }}
                                     </p>
                                     <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-                                        <span>{{ formatTransactionDate(t.date, t.created_at) }}</span>
+                                        <span>{{ formatTransactionDate(t.date, t.time, t.created_at) }}</span>
                                         <span>&bull;</span>
                                         <span class="truncate">{{ t.account?.name }}</span>
                                     </div>
