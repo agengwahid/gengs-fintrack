@@ -122,6 +122,12 @@ class TransactionController extends Controller
     {
         $user = $request->user();
 
+        if ($request->has('amount') && is_string($request->input('amount'))) {
+            $request->merge([
+                'amount' => str_replace('.', '', str_replace(',', '.', $request->input('amount'))),
+            ]);
+        }
+
         $validated = $request->validate([
             'type' => ['required', 'string', 'in:expense,income,transfer'],
             'amount' => ['required', 'numeric', 'min:0.01'],
@@ -185,6 +191,12 @@ class TransactionController extends Controller
     {
         $user = $request->user();
         abort_if($transaction->user_id !== $user->id, 403);
+
+        if ($request->has('amount') && is_string($request->input('amount'))) {
+            $request->merge([
+                'amount' => str_replace('.', '', str_replace(',', '.', $request->input('amount'))),
+            ]);
+        }
 
         $validated = $request->validate([
             'type' => ['required', 'string', 'in:expense,income,transfer'],

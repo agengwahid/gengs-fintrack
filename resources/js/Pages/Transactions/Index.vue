@@ -9,6 +9,7 @@ import Modal from '@/Components/Modal.vue';
 import Pagination from '@/Components/Pagination.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
+import MoneyInput from '@/Components/MoneyInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
@@ -635,18 +636,19 @@ function executeDelete() {
                             <span class="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">
                                 Rp
                             </span>
-                            <TextInput
+                            <MoneyInput
                                 id="amount"
                                 v-model="form.amount"
-                                type="number"
-                                step="any"
-                                min="0.01"
                                 placeholder="0"
                                 class="pl-11 block w-full rounded-xl font-mono text-lg font-bold"
                                 required
                                 autofocus
                             />
                         </div>
+                        <p v-if="form.amount && Number(form.amount) > 0" class="mt-1.5 text-xs text-emerald-600 font-bold flex items-center gap-1">
+                            <span>Terbaca:</span>
+                            <span class="text-sm font-extrabold text-slate-900">{{ formatRupiah(form.amount) }}</span>
+                        </p>
                         <InputError :message="form.errors.amount" class="mt-1" />
                     </div>
 

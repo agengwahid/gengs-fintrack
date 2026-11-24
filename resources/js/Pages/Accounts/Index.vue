@@ -7,6 +7,7 @@ import HeaderActionButton from '@/Components/HeaderActionButton.vue';
 import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
+import MoneyInput from '@/Components/MoneyInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
@@ -368,15 +369,17 @@ function getTypeLabel(type) {
                     <!-- Initial Balance -->
                     <div>
                         <InputLabel for="initial_balance" value="Saldo Awal (Rp) *" />
-                        <TextInput
+                        <MoneyInput
                             id="initial_balance"
                             v-model="form.initial_balance"
-                            type="number"
-                            step="any"
                             class="mt-1 block w-full rounded-xl font-mono"
                             placeholder="0"
                             required
                         />
+                        <p v-if="form.initial_balance !== '' && Number(form.initial_balance) > 0" class="mt-1.5 text-xs text-emerald-600 font-bold flex items-center gap-1">
+                            <span>Terbaca:</span>
+                            <span class="text-sm font-extrabold text-slate-900">{{ formatRupiah(form.initial_balance) }}</span>
+                        </p>
                         <p class="text-[11px] text-slate-500 mt-1">
                             Saldo awal saat rekening ini pertama kali didaftarkan.
                         </p>

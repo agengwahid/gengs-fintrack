@@ -256,3 +256,32 @@ test('user can update transaction time', function () {
     $response->assertRedirect();
     expect($tx->fresh()->time)->toContain('19:45');
 });
+
+test('user can create transaction with formatted amount containing thousand dots', function () {
+    $user = User::factory()->create();
+    $account = Account::factory()->create([
+        'user_id' => $user->id,
+        'initial_balance' => 5000000,
+        'current_balance' => 5000000,
+    ]);
+    $category = Category::factory()->create([
+        'user_id' => $user->id,
+        'type' => 'expense',
+    ]);
+
+    $response = $this->actingAs($user)->post(route('transactions.store'), [
+        'type' => 'expense',
+        'amount' => '1.250.000',
+        'date' => '2026-11-24',
+        'time' => '14:30',
+        'account_id' => $account->id,
+        'category_id' => $category->id,
+        'notes' => 'Belanja bulanan',
+    ]);
+
+    $response->assertRedirect();
+    $tx = Transaction::where('user_id', $user->id)->first();
+    expect($tx)->not->toBeNull();
+    expect((float) $tx->amount)->toBe(1250000.0);
+    expect((float) $account->fresh()->current_balance)->toBe(3750000.0);
+});

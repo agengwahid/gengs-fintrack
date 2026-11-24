@@ -8,6 +8,7 @@ import MonthYearPicker from '@/Components/MonthYearPicker.vue';
 import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
+import MoneyInput from '@/Components/MoneyInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
@@ -495,14 +496,11 @@ function deleteBudget() {
                     <!-- Target Nominal -->
                     <div>
                         <InputLabel for="amount" value="Nominal Anggaran (Rp)" />
-                        <TextInput
+                        <MoneyInput
                             id="amount"
-                            type="number"
-                            step="any"
-                            min="1"
                             v-model="form.amount"
-                            class="mt-1 block w-full rounded-xl text-sm"
-                            placeholder="Contoh: 1000000"
+                            class="mt-1 block w-full rounded-xl text-sm font-mono font-bold"
+                            placeholder="Contoh: 1.000.000"
                             required
                         />
                         <p v-if="form.amount && !isNaN(form.amount) && Number(form.amount) > 0" class="mt-1.5 text-xs text-emerald-600 font-bold flex items-center gap-1">

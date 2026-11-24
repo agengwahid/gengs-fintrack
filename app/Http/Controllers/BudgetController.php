@@ -102,6 +102,12 @@ class BudgetController extends Controller
     {
         $user = $request->user();
 
+        if ($request->has('amount') && is_string($request->input('amount'))) {
+            $request->merge([
+                'amount' => str_replace('.', '', str_replace(',', '.', $request->input('amount'))),
+            ]);
+        }
+
         $validated = $request->validate([
             'category_id' => [
                 'required',
@@ -133,6 +139,12 @@ class BudgetController extends Controller
         $user = $request->user();
 
         abort_if($budget->user_id !== $user->id, 403, 'Akses ditolak.');
+
+        if ($request->has('amount') && is_string($request->input('amount'))) {
+            $request->merge([
+                'amount' => str_replace('.', '', str_replace(',', '.', $request->input('amount'))),
+            ]);
+        }
 
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1'],
