@@ -48,6 +48,79 @@ export function formatDateIndo(dateString, format = 'short') {
 }
 
 /**
+ * Format jam dalam format Indonesia (HH:mm)
+ * Contoh: "2026-11-24T03:40:51.000000Z" -> "10:40 WIB"
+ */
+export function formatTime(dateString, withWib = true) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${hours}:${minutes}${withWib ? ' WIB' : ''}`;
+}
+
+/**
+ * Format tanggal dan jam transaksi dalam format Indonesia
+ * Menggabungkan tanggal transaksi (date) dan waktu (time atau created_at).
+ * Contoh: ("2026-11-02", "14:30") -> "2 Nov 2026, 14:30 WIB"
+ * Contoh: ("2026-11-02", null, "2026-11-02T03:40:51Z") -> "2 Nov 2026, 10:40 WIB"
+ */
+export function formatTransactionDate(dateStr, timeOrCreatedAt = null, fallbackCreatedAt = null, withWib = true) {
+    if (!dateStr && !timeOrCreatedAt && !fallbackCreatedAt) return '-';
+
+    let day, month, year;
+    if (dateStr) {
+        const parts = String(dateStr).split('T')[0].split('-');
+        if (parts.length === 3) {
+            year = parseInt(parts[0], 10);
+            const mIdx = parseInt(parts[1], 10) - 1;
+            day = parseInt(parts[2], 10);
+            const bulanPendek = [
+                'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+                'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
+            ];
+            month = bulanPendek[mIdx] || parts[1];
+        }
+    }
+
+    if (!day || !month || !year) {
+        const d = new Date(dateStr || timeOrCreatedAt || fallbackCreatedAt);
+        if (isNaN(d.getTime())) return dateStr || '-';
+        day = d.getDate();
+        const bulanPendek = [
+            'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+            'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
+        ];
+        month = bulanPendek[d.getMonth()];
+        year = d.getFullYear();
+    }
+
+    // 1. Explicit time string: "14:30" or "14:30:00"
+    if (timeOrCreatedAt && typeof timeOrCreatedAt === 'string' && /^\d{1,2}:\d{2}(:\d{2})?$/.test(timeOrCreatedAt.trim())) {
+        const parts = timeOrCreatedAt.trim().split(':');
+        const hours = parts[0].padStart(2, '0');
+        const minutes = parts[1].padStart(2, '0');
+        return `${day} ${month} ${year}, ${hours}:${minutes}${withWib ? ' WIB' : ''}`;
+    }
+
+    // 2. ISO datetime string (fallback or timeOrCreatedAt if ISO format)
+    const timeSource = fallbackCreatedAt || (timeOrCreatedAt && String(timeOrCreatedAt).includes('T') ? timeOrCreatedAt : null) || (dateStr && String(dateStr).includes('T') ? dateStr : null);
+    if (timeSource) {
+        const t = new Date(timeSource);
+        if (!isNaN(t.getTime())) {
+            const hours = String(t.getHours()).padStart(2, '0');
+            const minutes = String(t.getMinutes()).padStart(2, '0');
+            return `${day} ${month} ${year}, ${hours}:${minutes}${withWib ? ' WIB' : ''}`;
+        }
+    }
+
+    return `${day} ${month} ${year}`;
+}
+
+/**
  * Format periode bulan YYYY-MM
  * Contoh: "2026-10" -> "Oktober 2026"
  */

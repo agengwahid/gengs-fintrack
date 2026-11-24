@@ -6,7 +6,7 @@ import DynamicIcon from '@/Components/DynamicIcon.vue';
 import HeaderActionButton from '@/Components/HeaderActionButton.vue';
 import MonthYearPicker from '@/Components/MonthYearPicker.vue';
 import Chart from 'chart.js/auto';
-import { formatRupiah, formatDateIndo, formatPeriodIndo } from '@/Utils/formatters';
+import { formatRupiah, formatDateIndo, formatPeriodIndo, formatTransactionDate } from '@/Utils/formatters';
 import {
     Wallet,
     ArrowUpRight,
@@ -240,10 +240,7 @@ watch(
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center gap-2">
-                <BarChart3 class="w-6 h-6 text-emerald-600" />
-                <span>Dashboard Keuangan</span>
-            </div>
+            <span>Dashboard</span>
         </template>
 
         <template #actions>
@@ -253,161 +250,110 @@ watch(
                 label="Catat Transaksi"
                 short-label="Catat"
                 :icon="Plus"
+                class="hidden sm:inline-flex"
             />
         </template>
 
-        <div class="space-y-6">
+        <div class="space-y-5">
             <!-- Period Navigation Bar -->
-            <div class="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-sm flex items-center justify-between gap-3">
                 <MonthYearPicker
                     :model-value="period"
                     @change="changePeriod"
                     variant="inline"
                 />
 
-                <div class="flex items-center gap-3">
-                    <span class="text-xs text-slate-500 font-medium hidden md:inline">
-                        Ringkasan performa finansial bulan kalender.
-                    </span>
-                    <Link
-                        :href="route('reports.index')"
-                        class="text-xs font-semibold text-slate-600 hover:text-emerald-600 transition flex items-center gap-1"
-                    >
-                        <span>Lihat Laporan Lengkap</span>
-                        <ChevronRight class="w-4 h-4" />
-                    </Link>
-                </div>
+                <Link
+                    :href="route('reports.index')"
+                    class="hidden sm:flex text-xs font-semibold text-slate-500 hover:text-emerald-700 transition items-center gap-1"
+                >
+                    <span>Laporan</span>
+                    <ChevronRight class="w-4 h-4" />
+                </Link>
             </div>
 
-            <!-- Top 4 Financial Metric Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Total Balance (All Accounts) -->
-                <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-5 shadow-lg shadow-slate-900/10 flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                            <span>Total Saldo Rekening</span>
-                            <div class="w-8 h-8 rounded-xl bg-white/10 text-white flex items-center justify-center">
-                                <Wallet class="w-4 h-4" />
-                            </div>
-                        </div>
-                        <div class="mt-2 text-2xl font-black tracking-tight text-white">
-                            {{ formatRupiah(summary.total_balance) }}
-                        </div>
-                    </div>
-                    <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-                        <span>{{ accounts.length }} Rekening Aktif</span>
-                        <Link :href="route('accounts.index')" class="text-emerald-400 hover:underline font-medium">
-                            Kelola
-                        </Link>
-                    </div>
+            <!-- Financial Overview: Total Balance & Cashflow -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                <!-- Top Row: Balance Header -->
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Saldo Rekening</span>
+                    <Link :href="route('accounts.index')" class="text-xs font-semibold text-emerald-700 hover:underline">
+                        {{ accounts.length }} Rekening &rarr;
+                    </Link>
+                </div>
+                <div class="mt-2 text-3xl sm:text-4xl font-extrabold font-mono tracking-tight text-slate-900">
+                    {{ formatRupiah(summary.total_balance) }}
                 </div>
 
-                <!-- Income This Month -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <!-- 3-Column Cashflow Bar -->
+                <div class="mt-5 pt-4 border-t border-slate-100 grid grid-cols-3 gap-2">
                     <div>
-                        <div class="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider">
-                            <span>Pemasukan Bulan Ini</span>
-                            <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                                <ArrowUpRight class="w-4 h-4" />
-                            </div>
-                        </div>
-                        <div class="mt-2 text-2xl font-black text-emerald-600 tracking-tight">
-                            {{ formatRupiah(summary.income) }}
+                        <div class="text-[11px] font-medium text-slate-400">Pemasukan</div>
+                        <div class="text-sm sm:text-base font-bold font-mono text-emerald-700 truncate mt-0.5">
+                            +{{ formatRupiah(summary.income) }}
                         </div>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-400">
-                        Total uang masuk di {{ formatPeriodIndo(period) }}
-                    </div>
-                </div>
-
-                <!-- Expense This Month -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
                     <div>
-                        <div class="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider">
-                            <span>Pengeluaran Bulan Ini</span>
-                            <div class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
-                                <ArrowDownRight class="w-4 h-4" />
-                            </div>
-                        </div>
-                        <div class="mt-2 text-2xl font-black text-rose-600 tracking-tight">
-                            {{ formatRupiah(summary.expense) }}
+                        <div class="text-[11px] font-medium text-slate-400">Pengeluaran</div>
+                        <div class="text-sm sm:text-base font-bold font-mono text-rose-700 truncate mt-0.5">
+                            -{{ formatRupiah(summary.expense) }}
                         </div>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-400">
-                        Total uang keluar di {{ formatPeriodIndo(period) }}
-                    </div>
-                </div>
-
-                <!-- Net Cashflow -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
                     <div>
-                        <div class="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider">
-                            <span>Arus Kas Bersih</span>
-                            <div
-                                class="w-8 h-8 rounded-xl flex items-center justify-center"
-                                :class="summary.net_cashflow >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'"
-                            >
-                                <TrendingUp v-if="summary.net_cashflow >= 0" class="w-4 h-4" />
-                                <TrendingDown v-else class="w-4 h-4" />
-                            </div>
-                        </div>
+                        <div class="text-[11px] font-medium text-slate-400">Arus Kas</div>
                         <div
-                            class="mt-2 text-2xl font-black tracking-tight"
-                            :class="summary.net_cashflow >= 0 ? 'text-emerald-700' : 'text-rose-600'"
+                            class="text-sm sm:text-base font-bold font-mono truncate mt-0.5"
+                            :class="summary.net_cashflow >= 0 ? 'text-slate-900' : 'text-rose-700'"
                         >
                             {{ formatRupiah(summary.net_cashflow) }}
                         </div>
                     </div>
-                    <div
-                        class="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold"
-                        :class="summary.net_cashflow >= 0 ? 'text-emerald-600' : 'text-rose-600'"
-                    >
-                        {{ summary.net_cashflow >= 0 ? 'Surplus (Pemasukan > Pengeluaran)' : 'Defisit (Pengeluaran > Pemasukan)' }}
-                    </div>
                 </div>
             </div>
 
-            <!-- Budget Progress Banner -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div class="flex items-center gap-4 min-w-0">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                        <Target class="w-6 h-6" />
+            <!-- Budget Widget -->
+            <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm">
+                <div class="flex items-center justify-between mb-2.5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-800">Anggaran {{ formatPeriodIndo(period) }}</span>
+                        <span
+                            v-if="budgetSummary.count > 0"
+                            class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                            :class="{
+                                'bg-emerald-50 text-emerald-700': budgetSummary.percentage < 80,
+                                'bg-amber-50 text-amber-700': budgetSummary.percentage >= 80 && budgetSummary.percentage <= 100,
+                                'bg-rose-50 text-rose-700': budgetSummary.percentage > 100,
+                            }"
+                        >
+                            {{ budgetSummary.percentage }}%
+                        </span>
                     </div>
-                    <div class="min-w-0">
-                        <div class="flex items-center gap-2">
-                            <h3 class="text-sm font-bold text-slate-900">Realisasi Anggaran {{ formatPeriodIndo(period) }}</h3>
-                            <span
-                                v-if="budgetSummary.count > 0"
-                                class="text-xs font-bold px-2 py-0.5 rounded-full"
-                                :class="{
-                                    'bg-emerald-100 text-emerald-700': budgetSummary.percentage < 75,
-                                    'bg-amber-100 text-amber-700': budgetSummary.percentage >= 75 && budgetSummary.percentage < 90,
-                                    'bg-orange-100 text-orange-700': budgetSummary.percentage >= 90 && budgetSummary.percentage < 100,
-                                    'bg-blue-100 text-blue-700': budgetSummary.percentage === 100,
-                                    'bg-rose-100 text-rose-700': budgetSummary.percentage > 100,
-                                }"
-                            >
-                                <span v-if="budgetSummary.percentage === 100">100% Terpakai (Pas)</span>
-                                <span v-else-if="budgetSummary.percentage > 100">{{ budgetSummary.percentage }}% (Melebihi)</span>
-                                <span v-else>{{ budgetSummary.percentage }}% Terpakai</span>
-                            </span>
-                        </div>
-                        <p v-if="budgetSummary.count > 0" class="text-xs text-slate-500 mt-1">
-                            Terpakai <span class="font-bold text-slate-800">{{ formatRupiah(budgetSummary.total_spent) }}</span> dari target <span class="font-bold text-slate-800">{{ formatRupiah(budgetSummary.total_budget) }}</span> ({{ budgetSummary.count }} kategori).
-                        </p>
-                        <p v-else class="text-xs text-slate-400 mt-1">
-                            Belum ada anggaran yang ditetapkan untuk periode ini.
-                        </p>
-                    </div>
+                    <Link :href="route('budgets.index')" class="text-xs font-semibold text-emerald-700 hover:underline flex items-center gap-0.5">
+                        <span>Kelola</span>
+                        <ChevronRightSmall class="w-3.5 h-3.5" />
+                    </Link>
                 </div>
 
-                <div class="flex items-center gap-3 shrink-0">
-                    <Link
-                        :href="route('budgets.index')"
-                        class="px-4 py-2 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition inline-flex items-center gap-1.5"
-                    >
-                        <span>{{ budgetSummary.count > 0 ? 'Detail Anggaran' : 'Atur Anggaran' }}</span>
-                        <ChevronRightSmall class="w-4 h-4" />
+                <div v-if="budgetSummary.count > 0">
+                    <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div
+                            class="h-full rounded-full transition-all duration-500"
+                            :class="{
+                                'bg-emerald-500': budgetSummary.percentage < 80,
+                                'bg-amber-500': budgetSummary.percentage >= 80 && budgetSummary.percentage <= 100,
+                                'bg-rose-500': budgetSummary.percentage > 100,
+                            }"
+                            :style="{ width: `${Math.min(budgetSummary.percentage, 100)}%` }"
+                        ></div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs font-mono text-slate-600 mt-2">
+                        <span>{{ formatRupiah(budgetSummary.total_spent) }}</span>
+                        <span class="text-slate-400">dari {{ formatRupiah(budgetSummary.total_budget) }}</span>
+                    </div>
+                </div>
+                <div v-else class="text-xs text-slate-400 py-1">
+                    <Link :href="route('budgets.index')" class="text-emerald-700 font-semibold hover:underline">
+                        + Pasang anggaran bulan ini
                     </Link>
                 </div>
             </div>
@@ -417,16 +363,13 @@ watch(
                 <!-- Bar Chart: Monthly Trends (6 Months) -->
                 <div class="lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm flex flex-col justify-between">
                     <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900">Tren Pemasukan vs Pengeluaran</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Perbandingan arus kas selama 6 bulan terakhir</p>
-                        </div>
+                        <h3 class="text-base font-bold text-slate-900">Tren Pemasukan vs Pengeluaran</h3>
                         <div class="flex items-center gap-3 text-xs font-medium">
                             <span class="flex items-center gap-1 text-slate-600">
-                                <span class="w-3 h-3 rounded-sm bg-emerald-500 inline-block"></span> Masuk
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Masuk
                             </span>
                             <span class="flex items-center gap-1 text-slate-600">
-                                <span class="w-3 h-3 rounded-sm bg-rose-500 inline-block"></span> Keluar
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Keluar
                             </span>
                         </div>
                     </div>
@@ -439,11 +382,8 @@ watch(
                 <!-- Doughnut Chart: Expenses by Category -->
                 <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm flex flex-col justify-between">
                     <div class="flex items-center justify-between mb-2">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900">Pengeluaran per Kategori</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Proporsi pengeluaran di {{ formatPeriodIndo(period) }}</p>
-                        </div>
-                        <PieChart class="w-5 h-5 text-slate-400" />
+                        <h3 class="text-base font-bold text-slate-900">Pengeluaran per Kategori</h3>
+                        <PieChart class="w-4 h-4 text-slate-400" />
                     </div>
 
                     <div v-if="categoryExpenses.length > 0" class="relative h-64 sm:h-72 w-full flex items-center justify-center">
@@ -451,11 +391,7 @@ watch(
                     </div>
 
                     <div v-else class="h-64 flex flex-col items-center justify-center text-center p-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mb-2">
-                            <PieChart class="w-6 h-6" />
-                        </div>
-                        <p class="text-xs text-slate-500 font-medium">Belum ada pengeluaran</p>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Transaksi pengeluaran di bulan ini akan muncul di sini.</p>
+                        <p class="text-xs text-slate-400">Belum ada pengeluaran</p>
                     </div>
                 </div>
             </div>
@@ -465,15 +401,12 @@ watch(
                 <!-- Recent 5 Transactions (2 cols on large) -->
                 <div class="lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
                     <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900">Transaksi Terbaru</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">5 catatan transaksi finansial terakhir Anda</p>
-                        </div>
+                        <h3 class="text-base font-bold text-slate-900">Transaksi Terbaru</h3>
                         <Link
                             :href="route('transactions.index')"
-                            class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition flex items-center gap-1"
+                            class="text-xs font-semibold text-emerald-700 hover:underline flex items-center gap-1"
                         >
-                            <span>Lihat Semua</span>
+                            <span>Semua</span>
                             <ChevronRightSmall class="w-4 h-4" />
                         </Link>
                     </div>
@@ -499,7 +432,7 @@ watch(
                                         {{ t.notes || t.category?.name || (t.type === 'transfer' ? 'Transfer Antar Rekening' : 'Transaksi') }}
                                     </p>
                                     <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-                                        <span>{{ formatDateIndo(t.date) }}</span>
+                                        <span>{{ formatTransactionDate(t.date, t.time, t.created_at) }}</span>
                                         <span>&bull;</span>
                                         <span class="truncate">{{ t.account?.name }}</span>
                                     </div>
@@ -533,13 +466,10 @@ watch(
                 <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="text-base font-bold text-slate-900">Rekening Saya</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Saldo riil di setiap rekening</p>
-                            </div>
+                            <h3 class="text-base font-bold text-slate-900">Rekening Saya</h3>
                             <Link
                                 :href="route('accounts.index')"
-                                class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition"
+                                class="text-xs font-semibold text-emerald-700 hover:underline transition"
                             >
                                 Kelola
                             </Link>

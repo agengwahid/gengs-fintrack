@@ -6,7 +6,7 @@ import DynamicIcon from '@/Components/DynamicIcon.vue';
 import HeaderActionButton from '@/Components/HeaderActionButton.vue';
 import MonthYearPicker from '@/Components/MonthYearPicker.vue';
 import Chart from 'chart.js/auto';
-import { formatRupiah, formatDateIndo, formatPeriodIndo } from '@/Utils/formatters';
+import { formatRupiah, formatDateIndo, formatPeriodIndo, formatTransactionDate } from '@/Utils/formatters';
 import {
     BarChart3,
     Download,
@@ -662,7 +662,7 @@ watch(
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             <tr v-for="t in transactions.data" :key="t.id" class="hover:bg-slate-50/60 transition">
                                 <td class="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">
-                                    {{ formatDateIndo(t.date) }}
+                                    {{ formatTransactionDate(t.date, t.time, t.created_at) }}
                                 </td>
                                 <td class="py-3 px-4 whitespace-nowrap">
                                     <span

@@ -30,6 +30,7 @@ class TransactionFactory extends Factory
             'type' => $type,
             'amount' => fake()->numberBetween(10000, 500000),
             'date' => fake()->dateTimeBetween('-1 month', 'now')->format('Y-m-d'),
+            'time' => fake()->time('H:i'),
             'notes' => fake()->sentence(),
             'reference_number' => null,
         ];

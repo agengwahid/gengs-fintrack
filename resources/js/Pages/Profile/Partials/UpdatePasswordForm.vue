@@ -47,15 +47,9 @@ const updatePassword = () => {
             <!-- Alert jika akun Google belum memiliki kata sandi -->
             <div
                 v-if="!hasPassword"
-                class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 space-y-1"
+                class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700"
             >
-                <div class="font-bold flex items-center gap-1.5">
-                    <Sparkles class="w-4 h-4 text-emerald-600" />
-                    <span>Akun Terhubung dengan Google</span>
-                </div>
-                <p class="text-emerald-700">
-                    Anda saat ini terdaftar menggunakan akun Google dan belum memiliki kata sandi lokal FinTrack. Buat kata sandi baru di bawah ini jika Anda juga ingin mengaktifkan opsi login manual menggunakan email & kata sandi.
-                </p>
+                Akun Google terhubung. Buat kata sandi untuk opsi login manual dengan email.
             </div>
 
             <!-- Field kata sandi saat ini hanya ditampilkan jika sudah punya sandi -->

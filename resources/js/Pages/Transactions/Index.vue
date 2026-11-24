@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import HeaderActionButton from '@/Components/HeaderActionButton.vue';
@@ -9,11 +9,12 @@ import Modal from '@/Components/Modal.vue';
 import Pagination from '@/Components/Pagination.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
+import MoneyInput from '@/Components/MoneyInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DangerButton from '@/Components/DangerButton.vue';
-import { formatRupiah, formatDateIndo, formatPeriodIndo } from '@/Utils/formatters';
+import { formatRupiah, formatDateIndo, formatPeriodIndo, formatTransactionDate, formatTime } from '@/Utils/formatters';
 import {
     ArrowLeftRight,
     Plus,
@@ -106,6 +107,32 @@ const isAnyFilterActive = computed(() => {
     );
 });
 
+// Mobile Filter Toggle
+const showMoreFilters = ref(Boolean(props.filters.account_id || props.filters.category_id));
+
+// Date Grouping Helpers for sleek mobile banking layout
+function formatDayHeader(dateStr) {
+    if (!dateStr) return '';
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const dateFormatted = formatDateIndo(dateStr, 'long');
+
+    if (dateStr === today) {
+        return `Hari Ini • ${dateFormatted}`;
+    }
+    if (dateStr === yesterday) {
+        return `Kemarin • ${dateFormatted}`;
+    }
+    return dateFormatted;
+}
+
+function shouldShowDateHeader(index) {
+    if (index === 0) return true;
+    const currentTx = props.transactions.data[index];
+    const prevTx = props.transactions.data[index - 1];
+    return currentTx.date !== prevTx?.date;
+}
+
 // Transaction Modal State
 const isModalOpen = ref(false);
 const isEditing = ref(false);
@@ -115,10 +142,16 @@ const transactionToDelete = ref(null);
 
 const today = new Date().toISOString().slice(0, 10);
 
+function getCurrentTime() {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+}
+
 const form = useForm({
     type: 'expense',
     amount: '',
     date: today,
+    time: getCurrentTime(),
     account_id: '',
     destination_account_id: '',
     category_id: '',
@@ -143,6 +176,7 @@ function openCreateModal(defaultType = 'expense') {
     form.clearErrors();
     form.type = defaultType;
     form.date = today;
+    form.time = getCurrentTime();
     form.amount = '';
 
     // Set sensible default account if available
@@ -170,6 +204,7 @@ function openEditModal(tx) {
     form.type = tx.type;
     form.amount = tx.amount;
     form.date = tx.date;
+    form.time = tx.time ? String(tx.time).slice(0, 5) : (tx.created_at ? formatTime(tx.created_at, false) : getCurrentTime());
     form.account_id = tx.account_id;
     form.destination_account_id = tx.destination_account_id || '';
     form.category_id = tx.category_id || '';
@@ -182,6 +217,10 @@ function closeModal() {
     isModalOpen.value = false;
     form.reset();
     form.clearErrors();
+}
+
+function setCurrentTime() {
+    form.time = getCurrentTime();
 }
 
 function setTransactionType(type) {
@@ -202,7 +241,10 @@ function setTransactionType(type) {
     }
 }
 
-function submitForm() {
+const keepOpenAfterSave = ref(false);
+
+function submitForm(continueAdding = false) {
+    keepOpenAfterSave.value = continueAdding;
     if (isEditing.value) {
         form.put(route('transactions.update', editingTransactionId.value), {
             preserveScroll: true,
@@ -211,10 +253,43 @@ function submitForm() {
     } else {
         form.post(route('transactions.store'), {
             preserveScroll: true,
-            onSuccess: () => closeModal(),
+            onSuccess: () => {
+                if (keepOpenAfterSave.value) {
+                    form.amount = '';
+                    form.notes = '';
+                    form.reference_number = '';
+                    form.time = getCurrentTime();
+                    form.clearErrors();
+                } else {
+                    closeModal();
+                }
+            },
         });
     }
 }
+
+function handleCustomOpen() {
+    openCreateModal('expense');
+}
+
+onMounted(() => {
+    window.addEventListener('fintrack:open-create-transaction', handleCustomOpen);
+    if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('create') === '1') {
+            openCreateModal('expense');
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('create');
+            window.history.replaceState({}, '', cleanUrl.toString());
+        }
+    }
+});
+
+onUnmounted(() => {
+    if (typeof window !== 'undefined') {
+        window.removeEventListener('fintrack:open-create-transaction', handleCustomOpen);
+    }
+});
 
 function confirmDelete(tx) {
     transactionToDelete.value = tx;
@@ -258,92 +333,181 @@ function executeDelete() {
 
         <div class="space-y-6">
             <!-- Period Navigation Bar -->
-            <div class="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-sm flex items-center justify-between gap-3">
                 <MonthYearPicker
                     :model-value="filterForm.month"
                     @change="onMonthChange"
                     variant="inline"
                 />
-
-                <div class="text-xs text-slate-500 flex items-center gap-1.5">
-                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-                    Menampilkan transaksi periode <span class="font-bold text-slate-700">{{ formatPeriodIndo(filterForm.month) }}</span>
-                </div>
             </div>
 
-            <!-- Summary Stats for Selected Month -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <!-- Total Income -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                            Pemasukan ({{ formatPeriodIndo(filterForm.month) }})
+            <!-- Summary Stats for Selected Month (Responsive: Compact on Mobile, 3 Cards on Desktop) -->
+            <!-- Mobile Compact Summary Strip (< sm) -->
+            <div class="sm:hidden bg-white rounded-2xl p-3 border border-slate-200/80 shadow-sm">
+                <div class="grid grid-cols-3 divide-x divide-slate-100">
+                    <!-- Pemasukan -->
+                    <div class="pr-2">
+                        <div class="flex items-center gap-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                            <span class="truncate">Masuk</span>
                         </div>
-                        <div class="text-xl sm:text-2xl font-black text-emerald-600 mt-1">
+                        <div class="text-xs font-black font-mono tracking-tight text-emerald-600 mt-1 truncate">
                             +{{ formatRupiah(summary.total_income) }}
                         </div>
                     </div>
-                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                        <TrendingUp class="w-6 h-6" />
-                    </div>
-                </div>
 
-                <!-- Total Expense -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                            Pengeluaran ({{ formatPeriodIndo(filterForm.month) }})
+                    <!-- Pengeluaran -->
+                    <div class="px-2">
+                        <div class="flex items-center gap-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
+                            <span class="truncate">Keluar</span>
                         </div>
-                        <div class="text-xl sm:text-2xl font-black text-rose-600 mt-1">
+                        <div class="text-xs font-black font-mono tracking-tight text-rose-600 mt-1 truncate">
                             -{{ formatRupiah(summary.total_expense) }}
                         </div>
                     </div>
-                    <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                        <TrendingDown class="w-6 h-6" />
-                    </div>
-                </div>
 
-                <!-- Net Cashflow -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                            Arus Kas Bersih
+                    <!-- Selisih -->
+                    <div class="pl-2">
+                        <div class="flex items-center justify-between gap-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            <span class="truncate">Selisih</span>
+                            <span
+                                class="text-[9px] font-bold px-1 py-0.2 rounded"
+                                :class="summary.net_cashflow >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
+                            >
+                                {{ summary.net_cashflow >= 0 ? 'Surplus' : 'Defisit' }}
+                            </span>
                         </div>
                         <div
-                            class="text-xl sm:text-2xl font-black mt-1"
-                            :class="summary.net_cashflow >= 0 ? 'text-teal-600' : 'text-amber-600'"
+                            class="text-xs font-black font-mono tracking-tight mt-1 truncate"
+                            :class="summary.net_cashflow >= 0 ? 'text-slate-900' : 'text-rose-600'"
                         >
                             {{ formatRupiah(summary.net_cashflow) }}
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Desktop Summary Cards (>= sm) -->
+            <div class="hidden sm:grid sm:grid-cols-3 gap-3.5">
+                <!-- Total Income -->
+                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        Pemasukan ({{ formatPeriodIndo(filterForm.month) }})
+                    </div>
+                    <div class="text-xl sm:text-2xl font-bold font-mono tracking-tight text-emerald-700 mt-2">
+                        +{{ formatRupiah(summary.total_income) }}
+                    </div>
+                </div>
+
+                <!-- Total Expense -->
+                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        Pengeluaran ({{ formatPeriodIndo(filterForm.month) }})
+                    </div>
+                    <div class="text-xl sm:text-2xl font-bold font-mono tracking-tight text-rose-700 mt-2">
+                        -{{ formatRupiah(summary.total_expense) }}
+                    </div>
+                </div>
+
+                <!-- Net Cashflow -->
+                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        <span>Arus Kas Bersih</span>
+                        <span
+                            class="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                            :class="summary.net_cashflow >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
+                        >
+                            {{ summary.net_cashflow >= 0 ? 'Surplus' : 'Defisit' }}
+                        </span>
+                    </div>
                     <div
-                        class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                        :class="summary.net_cashflow >= 0 ? 'bg-teal-50 text-teal-600' : 'bg-amber-50 text-amber-600'"
+                        class="text-xl sm:text-2xl font-bold font-mono tracking-tight mt-2"
+                        :class="summary.net_cashflow >= 0 ? 'text-slate-900' : 'text-rose-700'"
                     >
-                        <Wallet class="w-6 h-6" />
+                        {{ formatRupiah(summary.net_cashflow) }}
                     </div>
                 </div>
             </div>
 
             <!-- Filters Toolbar -->
-            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <!-- Type Filter -->
-                    <div>
-                        <InputLabel for="filter-type" value="Tipe Transaksi" class="text-xs mb-1" />
-                        <select
-                            id="filter-type"
-                            v-model="filterForm.type"
-                            @change="applyFilters"
-                            class="block w-full rounded-xl border-slate-300 text-xs sm:text-sm focus:border-emerald-500 focus:ring-emerald-500"
+            <div class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                <!-- Quick Type Filter Chips (One-Tap on Mobile, Fits All Screens) -->
+                <div class="grid grid-cols-4 gap-1 p-1 bg-slate-100/90 rounded-xl text-xs">
+                    <button
+                        type="button"
+                        @click="filterForm.type = ''; applyFilters()"
+                        class="py-1.5 px-2 rounded-lg font-bold transition-all text-center text-xs truncate"
+                        :class="!filterForm.type ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'"
+                    >
+                        Semua
+                    </button>
+                    <button
+                        type="button"
+                        @click="filterForm.type = 'expense'; applyFilters()"
+                        class="py-1.5 px-2 rounded-lg font-bold transition-all text-center text-xs truncate"
+                        :class="filterForm.type === 'expense' ? 'bg-white text-rose-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'"
+                    >
+                        Keluar
+                    </button>
+                    <button
+                        type="button"
+                        @click="filterForm.type = 'income'; applyFilters()"
+                        class="py-1.5 px-2 rounded-lg font-bold transition-all text-center text-xs truncate"
+                        :class="filterForm.type === 'income' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'"
+                    >
+                        Masuk
+                    </button>
+                    <button
+                        type="button"
+                        @click="filterForm.type = 'transfer'; applyFilters()"
+                        class="py-1.5 px-2 rounded-lg font-bold transition-all text-center text-xs truncate"
+                        :class="filterForm.type === 'transfer' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'"
+                    >
+                        Transfer
+                    </button>
+                </div>
+
+                <!-- Search and Mobile Filter Toggle -->
+                <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                        <TextInput
+                            id="filter-search"
+                            v-model="filterForm.search"
+                            @keyup.enter="applyFilters"
+                            type="text"
+                            placeholder="Cari transaksi atau catatan..."
+                            class="w-full rounded-xl text-xs sm:text-sm pl-9 pr-8"
+                        />
+                        <Search class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <button
+                            v-if="filterForm.search"
+                            @click="filterForm.search = ''; applyFilters()"
+                            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1"
+                            title="Hapus pencarian"
                         >
-                            <option value="">Semua Tipe</option>
-                            <option value="expense">Pengeluaran</option>
-                            <option value="income">Pemasukan</option>
-                            <option value="transfer">Transfer</option>
-                        </select>
+                            ✕
+                        </button>
                     </div>
 
+                    <!-- Mobile Filter Toggle Button -->
+                    <button
+                        type="button"
+                        @click="showMoreFilters = !showMoreFilters"
+                        class="sm:hidden px-3 py-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition shrink-0"
+                        :class="showMoreFilters || filterForm.account_id || filterForm.category_id ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-bold' : 'border-slate-300 text-slate-600 bg-white'"
+                    >
+                        <Filter class="w-3.5 h-3.5" />
+                        <span>Filter</span>
+                        <span v-if="filterForm.account_id || filterForm.category_id" class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                    </button>
+                </div>
+
+                <!-- Account & Category Dropdown Filters (Collapsible on Mobile, Grid on Desktop) -->
+                <div
+                    class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1"
+                    :class="showMoreFilters ? 'block' : 'hidden sm:grid'"
+                >
                     <!-- Account Filter -->
                     <div>
                         <InputLabel for="filter-account" value="Rekening" class="text-xs mb-1" />
@@ -351,7 +515,7 @@ function executeDelete() {
                             id="filter-account"
                             v-model="filterForm.account_id"
                             @change="applyFilters"
-                            class="block w-full rounded-xl border-slate-300 text-xs sm:text-sm focus:border-emerald-500 focus:ring-emerald-500"
+                            class="block w-full rounded-xl border-slate-300 text-xs sm:text-sm focus:border-emerald-500 focus:ring-emerald-500 bg-white"
                         >
                             <option value="">Semua Rekening</option>
                             <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
@@ -367,7 +531,7 @@ function executeDelete() {
                             id="filter-category"
                             v-model="filterForm.category_id"
                             @change="applyFilters"
-                            class="block w-full rounded-xl border-slate-300 text-xs sm:text-sm focus:border-emerald-500 focus:ring-emerald-500"
+                            class="block w-full rounded-xl border-slate-300 text-xs sm:text-sm focus:border-emerald-500 focus:ring-emerald-500 bg-white"
                         >
                             <option value="">Semua Kategori</option>
                             <optgroup label="Pengeluaran">
@@ -382,31 +546,9 @@ function executeDelete() {
                             </optgroup>
                         </select>
                     </div>
-
-                    <!-- Search Input -->
-                    <div>
-                        <InputLabel for="filter-search" value="Cari Catatan" class="text-xs mb-1" />
-                        <div class="relative">
-                            <TextInput
-                                id="filter-search"
-                                v-model="filterForm.search"
-                                @keyup.enter="applyFilters"
-                                type="text"
-                                placeholder="Cari catatan..."
-                                class="w-full rounded-xl text-xs sm:text-sm pr-8"
-                            />
-                            <button
-                                @click="applyFilters"
-                                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                title="Cari"
-                            >
-                                <Search class="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Reset Button -->
+                <!-- Reset Button & Count -->
                 <div class="flex items-center justify-between pt-1 text-xs">
                     <span class="text-slate-500">
                         Menampilkan {{ transactions.total }} transaksi
@@ -414,7 +556,7 @@ function executeDelete() {
                     <button
                         v-if="isAnyFilterActive"
                         @click="resetFilters"
-                        class="inline-flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-700 font-semibold"
+                        class="inline-flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-700 font-semibold active:scale-95 transition"
                     >
                         <RotateCcw class="w-3.5 h-3.5" />
                         <span>Reset Filter</span>
@@ -423,132 +565,144 @@ function executeDelete() {
             </div>
 
             <!-- Transaction List -->
-            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                <div v-if="transactions.data.length === 0" class="p-12 text-center">
-                    <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
-                        <ArrowLeftRight class="w-8 h-8" />
+            <div class="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm">
+                <div v-if="transactions.data.length === 0" class="p-10 text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                        <ArrowLeftRight class="w-6 h-6" />
                     </div>
-                    <h3 class="text-base font-bold text-slate-800">Tidak Ada Transaksi</h3>
-                    <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-                        Tidak ada riwayat transaksi yang cocok dengan filter yang dipilih.
+                    <h3 class="text-sm font-bold text-slate-700">Tidak ada transaksi</h3>
+                    <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                        Belum ada catatan transaksi pada periode dan filter yang dipilih.
                     </p>
                     <button
                         @click="openCreateModal('expense')"
-                        class="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition"
+                        class="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition active:scale-95"
                     >
                         <Plus class="w-4 h-4" />
-                        <span>Catat Transaksi Sekarang</span>
+                        <span>Catat Transaksi</span>
                     </button>
                 </div>
 
                 <div v-else class="divide-y divide-slate-100">
                     <div
-                        v-for="tx in transactions.data"
+                        v-for="(tx, index) in transactions.data"
                         :key="tx.id"
-                        class="group p-4 sm:p-5 hover:bg-slate-50/80 transition flex items-center justify-between gap-4"
                     >
-                        <!-- Left: Icon & Details -->
-                        <div class="flex items-center gap-3.5 min-w-0">
-                            <!-- Category / Type Icon Badge -->
-                            <div
-                                class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm"
-                                :style="{
-                                    backgroundColor: tx.type === 'transfer'
-                                        ? '#0284c7'
-                                        : (tx.category?.color || (tx.type === 'expense' ? '#ef4444' : '#10b981'))
-                                }"
-                            >
-                                <DynamicIcon
-                                    :name="tx.type === 'transfer' ? 'ArrowLeftRight' : (tx.category?.icon || (tx.type === 'expense' ? 'ShoppingBag' : 'Briefcase'))"
-                                    class="w-5 h-5"
-                                />
-                            </div>
-
-                            <div class="min-w-0">
-                                <!-- Title: Category name or Transfer info -->
-                                <div class="flex items-center gap-2">
-                                    <h4 class="text-sm font-bold text-slate-800 truncate">
-                                        <template v-if="tx.type === 'transfer'">
-                                            Transfer Saldo
-                                        </template>
-                                        <template v-else>
-                                            {{ tx.category?.name || 'Kategori Dihapus' }}
-                                        </template>
-                                    </h4>
-
-                                    <!-- Type Pill Badge -->
-                                    <span
-                                        class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold"
-                                        :class="{
-                                            'bg-rose-50 text-rose-700': tx.type === 'expense',
-                                            'bg-emerald-50 text-emerald-700': tx.type === 'income',
-                                            'bg-sky-50 text-sky-700': tx.type === 'transfer',
-                                        }"
-                                    >
-                                        {{ tx.type === 'expense' ? 'Pengeluaran' : (tx.type === 'income' ? 'Pemasukan' : 'Transfer') }}
-                                    </span>
-                                </div>
-
-                                <!-- Sub-info: Date, Account(s), Notes -->
-                                <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 mt-1">
-                                    <span class="font-medium text-slate-600">{{ formatDateIndo(tx.date) }}</span>
-                                    <span>&bull;</span>
-
-                                    <!-- Account info -->
-                                    <span class="inline-flex items-center gap-1">
-                                        <span class="font-semibold text-slate-700">{{ tx.account?.name || 'Rekening' }}</span>
-                                        <template v-if="tx.type === 'transfer'">
-                                            <ArrowRight class="w-3 h-3 text-slate-400 inline" />
-                                            <span class="font-semibold text-slate-700">{{ tx.destination_account?.name || 'Rekening Tujuan' }}</span>
-                                        </template>
-                                    </span>
-
-                                    <!-- Notes -->
-                                    <template v-if="tx.notes">
-                                        <span>&bull;</span>
-                                        <span class="truncate italic text-slate-500 max-w-xs">{{ tx.notes }}</span>
-                                    </template>
-                                </div>
-                            </div>
+                        <!-- Sleek Day Header (Grouped by Date) -->
+                        <div
+                            v-if="shouldShowDateHeader(index)"
+                            class="px-4 py-2 bg-slate-50/90 border-b border-slate-100/90 text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5"
+                        >
+                            <Calendar class="w-3.5 h-3.5 text-slate-400" />
+                            <span>{{ formatDayHeader(tx.date) }}</span>
                         </div>
 
-                        <!-- Right: Amount & Actions -->
-                        <div class="flex items-center gap-3 shrink-0">
-                            <!-- Amount -->
-                            <div class="text-right">
+                        <!-- Transaction Row (Tap anywhere to edit / view) -->
+                        <div
+                            @click="openEditModal(tx)"
+                            class="group p-3.5 sm:p-4 hover:bg-slate-50/80 active:bg-slate-100/70 transition-colors flex items-center justify-between gap-3 cursor-pointer"
+                        >
+                            <!-- Left: Soft Pastel Icon & Info -->
+                            <div class="flex items-center gap-3 min-w-0 flex-1">
+                                <!-- Category / Type Icon Badge (Soft Tinted Squircle) -->
                                 <div
-                                    class="text-sm sm:text-base font-black tracking-tight"
-                                    :class="{
-                                        'text-rose-600': tx.type === 'expense',
-                                        'text-emerald-600': tx.type === 'income',
-                                        'text-sky-600': tx.type === 'transfer',
+                                    class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs transition transform group-hover:scale-105"
+                                    :style="{
+                                        backgroundColor: tx.type === 'transfer'
+                                            ? '#0284c718'
+                                            : (tx.category?.color ? tx.category.color + '1a' : (tx.type === 'expense' ? '#f43f5e18' : '#10b98118')),
+                                        color: tx.type === 'transfer'
+                                            ? '#0284c7'
+                                            : (tx.category?.color || (tx.type === 'expense' ? '#f43f5e' : '#10b981'))
                                     }"
                                 >
-                                    <template v-if="tx.type === 'expense'">-{{ formatRupiah(tx.amount) }}</template>
-                                    <template v-else-if="tx.type === 'income'">+{{ formatRupiah(tx.amount) }}</template>
-                                    <template v-else>{{ formatRupiah(tx.amount) }}</template>
+                                    <DynamicIcon
+                                        :name="tx.type === 'transfer' ? 'ArrowLeftRight' : (tx.category?.icon || (tx.type === 'expense' ? 'ShoppingBag' : 'Briefcase'))"
+                                        class="w-5 h-5"
+                                    />
                                 </div>
-                                <div v-if="tx.reference_number" class="text-[10px] text-slate-400 font-mono">
-                                    Ref: {{ tx.reference_number }}
+
+                                <div class="min-w-0 flex-1">
+                                    <!-- Title & Optional Transfer Tag -->
+                                    <div class="flex items-center gap-1.5">
+                                        <h4 class="text-xs sm:text-sm font-bold text-slate-800 truncate">
+                                            <template v-if="tx.type === 'transfer'">
+                                                Transfer Saldo
+                                            </template>
+                                            <template v-else>
+                                                {{ tx.category?.name || 'Kategori Dihapus' }}
+                                            </template>
+                                        </h4>
+
+                                        <span
+                                            v-if="tx.type === 'transfer'"
+                                            class="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60"
+                                        >
+                                            Transfer
+                                        </span>
+                                    </div>
+
+                                    <!-- Sub-info: Account • Time -->
+                                    <div class="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5 truncate">
+                                        <span class="font-medium text-slate-600 truncate">
+                                            {{ tx.account?.name || 'Rekening' }}
+                                            <template v-if="tx.type === 'transfer'">
+                                                &rarr; {{ tx.destination_account?.name || 'Tujuan' }}
+                                            </template>
+                                        </span>
+                                        <span class="text-slate-300 font-light">&bull;</span>
+                                        <span class="text-slate-400 shrink-0 text-[11px]">{{ formatTime(tx.time || tx.created_at) || tx.date }}</span>
+                                    </div>
+
+                                    <!-- Notes (if any) -->
+                                    <div v-if="tx.notes" class="text-[11px] text-slate-500 italic truncate mt-0.5 max-w-xs sm:max-w-md">
+                                        {{ tx.notes }}
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Actions -->
-                            <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition">
-                                <button
-                                    @click="openEditModal(tx)"
-                                    class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition"
-                                    title="Ubah Transaksi"
-                                >
-                                    <Pencil class="w-4 h-4" />
-                                </button>
-                                <button
-                                    @click="confirmDelete(tx)"
-                                    class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                                    title="Hapus Transaksi"
-                                >
-                                    <Trash2 class="w-4 h-4" />
-                                </button>
+                            <!-- Right: Amount & Actions -->
+                            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                                <!-- Amount -->
+                                <div class="text-right">
+                                    <div
+                                        class="text-xs sm:text-base font-extrabold font-mono tracking-tight"
+                                        :class="{
+                                            'text-rose-600': tx.type === 'expense',
+                                            'text-emerald-600': tx.type === 'income',
+                                            'text-sky-600': tx.type === 'transfer',
+                                        }"
+                                    >
+                                        <template v-if="tx.type === 'expense'">-{{ formatRupiah(tx.amount) }}</template>
+                                        <template v-else-if="tx.type === 'income'">+{{ formatRupiah(tx.amount) }}</template>
+                                        <template v-else>{{ formatRupiah(tx.amount) }}</template>
+                                    </div>
+                                    <div v-if="tx.reference_number" class="text-[9px] text-slate-400 font-mono truncate max-w-[100px]">
+                                        #{{ tx.reference_number }}
+                                    </div>
+                                </div>
+
+                                <!-- Actions (Stop propagation to prevent opening modal) -->
+                                <div class="flex items-center gap-0.5">
+                                    <button
+                                        type="button"
+                                        @click.stop="openEditModal(tx)"
+                                        class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 active:scale-95 transition"
+                                        title="Ubah Transaksi"
+                                        aria-label="Ubah Transaksi"
+                                    >
+                                        <Pencil class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click.stop="confirmDelete(tx)"
+                                        class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-700 hover:bg-rose-50 active:scale-95 transition"
+                                        title="Hapus Transaksi"
+                                        aria-label="Hapus Transaksi"
+                                    >
+                                        <Trash2 class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -618,37 +772,61 @@ function executeDelete() {
 
                     <!-- Nominal Amount -->
                     <div>
-                        <InputLabel for="amount" value="Nominal Transaksi (Rp) *" />
+                        <InputLabel for="amount" value="Nominal *" />
                         <div class="relative mt-1">
                             <span class="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">
                                 Rp
                             </span>
-                            <TextInput
+                            <MoneyInput
                                 id="amount"
                                 v-model="form.amount"
-                                type="number"
-                                step="any"
-                                min="0.01"
                                 placeholder="0"
                                 class="pl-11 block w-full rounded-xl font-mono text-lg font-bold"
                                 required
                                 autofocus
                             />
                         </div>
+                        <p v-if="form.amount && Number(form.amount) > 0" class="mt-1 text-xs font-semibold text-slate-500 font-mono">
+                            {{ formatRupiah(form.amount) }}
+                        </p>
                         <InputError :message="form.errors.amount" class="mt-1" />
                     </div>
 
-                    <!-- Date -->
-                    <div>
-                        <InputLabel for="date" value="Tanggal Transaksi *" />
-                        <input
-                            id="date"
-                            v-model="form.date"
-                            type="date"
-                            class="mt-1 block w-full rounded-xl border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 text-sm"
-                            required
-                        />
-                        <InputError :message="form.errors.date" class="mt-1" />
+                    <!-- Date & Time -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Date -->
+                        <div>
+                            <InputLabel for="date" value="Tanggal *" />
+                            <input
+                                id="date"
+                                v-model="form.date"
+                                type="date"
+                                class="mt-1 block w-full rounded-xl border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 text-sm"
+                                required
+                            />
+                            <InputError :message="form.errors.date" class="mt-1" />
+                        </div>
+
+                        <!-- Time -->
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <InputLabel for="time" value="Waktu" />
+                                <button
+                                    type="button"
+                                    @click="setCurrentTime"
+                                    class="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 transition"
+                                >
+                                    Sekarang
+                                </button>
+                            </div>
+                            <input
+                                id="time"
+                                v-model="form.time"
+                                type="time"
+                                class="mt-1 block w-full rounded-xl border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 text-sm"
+                            />
+                            <InputError :message="form.errors.time" class="mt-1" />
+                        </div>
                     </div>
 
                     <!-- Account & Category Fields -->
@@ -657,7 +835,7 @@ function executeDelete() {
                         <div>
                             <InputLabel
                                 for="account_id"
-                                :value="form.type === 'transfer' ? 'Dari Rekening (Asal) *' : (form.type === 'income' ? 'Rekening Tujuan *' : 'Rekening Sumber *')"
+                                :value="form.type === 'transfer' ? 'Dari Rekening *' : 'Rekening *'"
                             />
                             <select
                                 id="account_id"
@@ -675,7 +853,7 @@ function executeDelete() {
 
                         <!-- Destination Account for Transfer -->
                         <div v-if="form.type === 'transfer'">
-                            <InputLabel for="dest_account" value="Ke Rekening (Tujuan) *" />
+                            <InputLabel for="dest_account" value="Ke Rekening *" />
                             <select
                                 id="dest_account"
                                 v-model="form.destination_account_id"
@@ -694,7 +872,7 @@ function executeDelete() {
                         <div v-else>
                             <InputLabel
                                 for="category_id"
-                                :value="form.type === 'expense' ? 'Kategori Pengeluaran *' : 'Kategori Pemasukan *'"
+                                value="Kategori *"
                             />
                             <select
                                 id="category_id"
@@ -717,36 +895,45 @@ function executeDelete() {
 
                     <!-- Notes -->
                     <div>
-                        <InputLabel for="notes" value="Catatan / Keterangan (Opsional)" />
+                        <InputLabel for="notes" value="Catatan" />
                         <textarea
                             id="notes"
                             v-model="form.notes"
                             rows="2"
                             class="mt-1 block w-full rounded-xl border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 text-sm shadow-sm"
-                            placeholder="Catatan belanja, nama toko, keperluan..."
+                            placeholder="Catatan..."
                         ></textarea>
                         <InputError :message="form.errors.notes" class="mt-1" />
                     </div>
 
                     <!-- Reference Number -->
                     <div>
-                        <InputLabel for="ref-num" value="No. Referensi / ID Transaksi (Opsional)" />
+                        <InputLabel for="ref-num" value="No. Referensi" />
                         <TextInput
                             id="ref-num"
                             v-model="form.reference_number"
                             type="text"
-                            class="mt-1 block w-full rounded-xl"
-                            placeholder="Contoh: INV-001, No. Resi, dll"
+                            class="mt-1 block w-full rounded-xl text-sm"
+                            placeholder="Opsional"
                         />
                         <InputError :message="form.errors.reference_number" class="mt-1" />
                     </div>
 
                     <!-- Footer Actions -->
-                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                        <SecondaryButton type="button" @click="closeModal">
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3 pt-4 border-t border-slate-100">
+                        <SecondaryButton type="button" @click="closeModal" class="w-full sm:w-auto justify-center">
                             Batal
                         </SecondaryButton>
-                        <PrimaryButton :disabled="form.processing" class="bg-emerald-600 hover:bg-emerald-700">
+                        <button
+                            v-if="!isEditing"
+                            type="button"
+                            :disabled="form.processing"
+                            @click="submitForm(true)"
+                            class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50"
+                        >
+                            Simpan & Catat Lagi
+                        </button>
+                        <PrimaryButton :disabled="form.processing" @click="submitForm(false)" class="w-full sm:w-auto justify-center bg-emerald-600 hover:bg-emerald-700">
                             {{ form.processing ? 'Menyimpan...' : (isEditing ? 'Simpan Perubahan' : 'Catat Transaksi') }}
                         </PrimaryButton>
                     </div>
@@ -757,19 +944,16 @@ function executeDelete() {
         <!-- Delete Confirmation Modal -->
         <Modal :show="isDeleteModalOpen" @close="closeDeleteModal" max-width="md">
             <div class="p-6">
-                <div class="flex items-center gap-3 text-rose-600 mb-4">
-                    <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                <div class="flex items-center gap-3 text-rose-600 mb-3">
+                    <div class="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
                         <AlertTriangle class="w-5 h-5" />
                     </div>
-                    <div>
-                        <h3 class="text-base font-bold text-slate-800">Hapus Transaksi?</h3>
-                        <p class="text-xs text-slate-500">Saldo rekening akan otomatis disesuaikan kembali</p>
-                    </div>
+                    <h3 class="text-base font-bold text-slate-800">Hapus Transaksi</h3>
                 </div>
 
-                <p class="text-sm text-slate-600 leading-relaxed">
-                    Apakah Anda yakin ingin menghapus catatan transaksi senilai
-                    <strong class="text-slate-900">{{ formatRupiah(transactionToDelete?.amount) }}</strong>?
+                <p class="text-sm text-slate-600">
+                    Hapus catatan transaksi senilai
+                    <strong class="text-slate-900 font-bold">{{ formatRupiah(transactionToDelete?.amount) }}</strong>?
                 </p>
 
                 <div class="mt-6 flex items-center justify-end gap-3">

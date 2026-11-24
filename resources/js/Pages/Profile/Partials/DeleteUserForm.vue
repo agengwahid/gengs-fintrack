@@ -40,8 +40,8 @@ const closeModal = () => {
 
 <template>
     <section class="space-y-4">
-        <p class="text-xs text-slate-500 max-w-xl leading-relaxed">
-            Setelah akun dihapus, seluruh data rekening, transaksi, kategori, anggaran, dan log sinkronisasi akan dihapus secara permanen dari basis data. Pastikan Anda telah mengekspor laporan keuangan yang diperlukan sebelum melanjutkan.
+        <p class="text-xs text-slate-500 max-w-xl">
+            Seluruh data akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
         </p>
 
         <div>

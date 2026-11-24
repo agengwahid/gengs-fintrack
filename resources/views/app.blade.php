@@ -2,14 +2,14 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
         <title inertia>{{ config('app.name', 'FinTrack') }}</title>
         <meta name="description" content="FinTrack - Aplikasi Pencatatan Keuangan Pribadi Modern dan Aman">
 
         <!-- PWA Meta Tags & Web App Manifest -->
         <link rel="manifest" href="/manifest.json">
-        <meta name="theme-color" content="#059669">
+        <meta name="theme-color" content="#ffffff">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="application-name" content="FinTrack">
         

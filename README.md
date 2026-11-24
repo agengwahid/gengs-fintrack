@@ -1,154 +1,145 @@
-# FinTrack (Gengs FinTrack)
+# FinTrack — Smart Financial Tracker
 
-Aplikasi pencatatan keuangan pribadi modern, responsif, aman, dan berstandar internasional yang terintegrasi secara otomatis dengan **Google Sheets API**. Dibangun menggunakan **Laravel 12**, **Vue 3 Composition API**, **Inertia.js v2**, **Tailwind CSS**, dan basis data **PostgreSQL**.
+<p align="center">
+  <img src="public/fintrack-thumbnail.png" alt="FinTrack Showcase" width="100%" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+</p>
 
----
-
-## 🌟 Fitur Utama
-
-### 1. Dashboard Finansial Terpadu
-- **Ringkasan Saldo**: Total saldo seluruh rekening aktif, pemasukan bulan berjalan, pengeluaran bulan berjalan, dan arus kas bersih (*net cashflow*).
-- **Grafik Tren Bulanan**: Visualisasi bar chart interaktif perbandingan arus kas bulanan menggunakan **Chart.js**.
-- **Komposisi Pengeluaran**: Visualisasi doughnut chart persentase pengeluaran per kategori.
-- **Daftar Transaksi Terbaru**: Menampilkan mutasi rekening teranyar dengan badge status warna.
-- **Ringkasan Realisasi Anggaran**: Memantau kategori yang mendekati atau melebihi pagu anggaran secara cepat.
-
-### 2. Multi-Rekening (Accounts Management)
-- Mendukung berbagai jenis rekening: **Tunai (Cash)**, **Bank**, **E-Wallet**, **Investasi**, dan **Kartu Kredit**.
-- Saldo awal dan perhitungan saldo dinamis berbasis mutasi riil.
-- Proteksi penghapusan aman: rekening yang memiliki transaksi dicegah untuk dihapus sembarangan.
-- Fitur penonaktifan rekening (*is_active*).
-
-### 3. Manajemen Kategori Berjenjang (Categories Management)
-- Klasifikasi tipe kategori: **Pemasukan (Income)** dan **Pengeluaran (Expense)**.
-- Dilengkapi kustomisasi warna HEX dan pemilihan ikon dinamis (Lucide Icons).
-- Seeder bawaan 15+ kategori populer Indonesia (Gaji, Makanan, Transportasi, Tagihan, Hiburan, dll).
-
-### 4. Transaksi & Kalkulasi Saldo Idempoten
-- CRUD transaksi komprehensif dengan identitas **UUID**.
-- Fitur pencarian teks, filter rentang tanggal, filter rekening, kategori, dan jenis transaksi.
-- Pagination dan penanganan format desimal Rupiah secara presisi.
-- Perhitungan saldo konsisten di dalam database transaction.
-
-### 5. Anggaran Bulanan (Monthly Budgets)
-- Penetapan plafon anggaran per kategori per bulan (format `YYYY-MM`).
-- Kalkulasi realisasi pengeluaran, sisa anggaran, dan persentase penggunaan secara otomatis.
-- Indikator visual progres: bar hijau (aman), kuning (mendekati batas 80%), dan merah (over-budget).
-
-### 6. Laporan Finansial & Ekspor CSV
-- Laporan arus kas harian, bulanan, tahunan, atau rentang tanggal kustom.
-- Ringkasan akumulasi per kategori dan per rekening.
-- **Ekspor CSV**: Pengunduhan data transaksi terfilter dengan encoding **UTF-8 BOM** agar terbaca rapi di Microsoft Excel.
-
-### 7. Integrasi Google Sheets Server-Side (Web UI Configured)
-- **Non-Hardcoded**: Unggah file Service Account JSON atau tempel teks kredensial langsung melalui antarmuka web (`/sheets`).
-- **Auto-Extract URL**: Menempelkan link lengkap Google Spreadsheet akan diekstrak ID-nya secara otomatis.
-- **Enkripsi Kredensial Database**: Kunci privat Google disimpan aman di PostgreSQL dengan enkripsi AES bawaan Laravel (`'service_account_credentials' => 'encrypted:array'`).
-- **Sinkronisasi Otomatis 3 Worksheet**:
-  1. `Transactions`: Baris riwayat transaksi lengkap dengan identitas unik idempoten.
-  2. `Monthly Summary`: Rekapitulasi pemasukan, pengeluaran, dan selisih per bulan.
-  3. `Category Summary`: Akumulasi pengeluaran per kategori.
-- **Antrean Latar Belakang (Database Queue)**: Menggunakan queue worker dengan percobaan ulang (*retry* 3x) dan penanganan backoff sehingga transaksi web tidak terhambat.
-- **Fitur Bantuan Pengguna**: Tombol uji koneksi instan, tombol 1-klik salin email Service Account, dan tombol sinkronisasi massal (*Sync All*).
-
-### 8. Keamanan & Pengaturan Akun
-- Autentikasi sesi Laravel dengan proteksi CSRF, password hashing, dan rate-limiting.
-- Isolasi data pengguna secara ketat: seluruh query dibatasi berdasarkan pengguna yang sedang login.
-- Sanitasi pesan error: token akses dan private key disamarkan dari log database (`[REDACTED_KEY]`).
-- Halaman pengaturan profil, ganti kata sandi, dan preferensi lokalisasi Indonesia.
+<p align="center">
+  <a href="https://fintrack.nilaismkn1lebong.my.id/"><img src="https://img.shields.io/badge/Live_Demo-Online-10b981?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo"></a>
+  <img src="https://img.shields.io/badge/PWA-Ready-059669?style=for-the-badge&logo=pwa&logoColor=white" alt="PWA Ready">
+  <img src="https://img.shields.io/badge/PHP-8.3-777bb4?style=for-the-badge&logo=php&logoColor=white" alt="PHP 8.3">
+  <img src="https://img.shields.io/badge/Laravel-11-ff2d20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel 11">
+  <img src="https://img.shields.io/badge/Vue.js-3.x-4fc08d?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue 3">
+  <img src="https://img.shields.io/badge/Inertia.js-v2-9553e9?style=for-the-badge&logo=inertia&logoColor=white" alt="Inertia.js">
+  <img src="https://img.shields.io/badge/Tests-99_Passed-34d399?style=for-the-badge&logo=pest&logoColor=white" alt="Pest Tests">
+</p>
 
 ---
 
-## 🛠️ Tech Stack
+## 🌐 Live Application & PWA
 
-- **Backend**: Laravel 12 (PHP 8.3+)
-- **Frontend**: Vue 3 (Composition API, `<script setup>`)
-- **Adapter SPA**: Inertia.js v2
-- **Styling**: Tailwind CSS
-- **Database**: PostgreSQL 15/16 (UUID Primary Keys)
-- **Queue Worker**: Laravel Database Queue
-- **Spreadsheet API**: Google Client Services API (`google/apiclient`)
-- **Grafik & Ikon**: Chart.js & Lucide Vue Icons
-- **Pengujian**: Pest PHP (86 Automated Tests)
-- **Formatting**: Laravel Pint
+Aplikasi FinTrack telah resmi di-*deploy* ke server produksi dan siap digunakan secara gratis:
+
+👉 **[Buka FinTrack Live Demo](https://fintrack.nilaismkn1lebong.my.id/)**
+
+> 📱 **Dukungan PWA (Progressive Web App):**  
+> FinTrack dapat di-install langsung ke layar utama smartphone Anda (Android / iOS) maupun Desktop tanpa perlu mengunduh file besar dari Google Play Store atau Apple App Store. Cukup buka tautan di atas lewat browser HP (Chrome/Safari), lalu pilih menu **"Tambahkan ke Layar Utama" / "Add to Home Screen"**. Aplikasi akan langsung terpasang mandiri, hemat memori, dan terasa seperti aplikasi native!
 
 ---
 
-## 🚀 Panduan Instalasi Lokal (Local Development)
+## 📖 Tentang FinTrack
 
-### Prasyarat
-- PHP >= 8.3 dengan ekstensi `pdo_pgsql`, `bcmath`, `curl`, `mbstring`, `zip`, `pcntl`
-- PostgreSQL Server
-- Composer 2+
-- Node.js >= 20 & npm
+**FinTrack** adalah aplikasi pelacak keuangan harian modern yang dirancang untuk mengatasi masalah klasik pencatatan finansial: spreadsheet yang kekecilan di layar HP, atau aplikasi pencatat keuangan yang rumit dan penuh iklan. 
 
-### Langkah Instalasi
-
-1. **Clone repository**:
-   ```bash
-   git clone https://github.com/agengwahid/gengs-fintrack.git
-   cd gengs-fintrack
-   ```
-
-2. **Install dependensi**:
-   ```bash
-   composer install
-   npm install
-   ```
-
-3. **Konfigurasi Environment**:
-   ```bash
-   cp .env.example .env
-   php artisan key:generate
-   ```
-
-4. **Konfigurasi Database di `.env`**:
-   ```ini
-   DB_CONNECTION=pgsql
-   DB_HOST=127.0.0.1
-   DB_PORT=5432
-   DB_DATABASE=gengs_fintrack
-   DB_USERNAME=postgres
-   DB_PASSWORD=rahasia
-   QUEUE_CONNECTION=database
-   ```
-
-5. **Jalankan Migrasi & Seeder**:
-   ```bash
-   php artisan migrate
-   php artisan db:seed --class=CategorySeeder
-   ```
-
-6. **Jalankan Pengujian (Testing)**:
-   ```bash
-   ./vendor/bin/pest
-   ```
-
-7. **Jalankan Server Lokal**:
-   - Terminal 1 (Laravel Server):
-     ```bash
-     php artisan serve
-     ```
-   - Terminal 2 (Vite HMR):
-     ```bash
-     npm run dev
-     ```
-   - Terminal 3 (Queue Worker untuk Google Sheets):
-     ```bash
-     php artisan queue:work
-     ```
-
-Buka browser Anda di `http://localhost:8000`.
+FinTrack mengutamakan **kecepatan pencatatan, tampilan bersih (anti-AI slop), keamanan tingkat perbankan, dan kemudahan akses data mandiri**.
 
 ---
 
-## 🚢 Panduan Deployment Server Produksi
+## ✨ Fitur-Fitur Utama
 
-Untuk panduan lengkap setup di VPS Ubuntu (Nginx, Supervisor, SSL Let's Encrypt, dan Cron Scheduler), silakan baca file:
-👉 **[DEPLOYMENT.md](DEPLOYMENT.md)**
+### 1. 📱 Dasbor Finansial & Cashflow Realtime
+* **Perhitungan Kekayaan Bersih (Net Worth)**: Akumulasi saldo otomatis dari seluruh akun rekening aktif.
+* **Arus Kas 3 Kolom**: Membandingkan total pemasukan, pengeluaran, dan selisih bersih (*surplus/defisit*) bulan berjalan dalam satu tampilan ringkas.
+* **Tren Visual & Proporsi**: Dilengkapi grafik tren bulanan dan persentase pengeluaran per kategori menggunakan Chart.js.
+
+### 2. ⚡ 1-Tap Salin Nomor Rekening
+* Seluruh rekening bank (BCA, Mandiri, BNI, dll.) dan dompet digital (GoPay, OVO, Dana) tersusun rapi layaknya kartu dompet digital.
+* Dilengkapi tombol salin nomor rekening instan **1 kali sentuh** ke clipboard — sangat praktis saat perlu membagikan nomor rekening ke rekan bisnis atau teman.
+
+### 3. 📊 Sinkronisasi Otomatis Google Spreadsheet
+* Setiap transaksi yang Anda catat otomatis disinkronkan 2 arah ke Google Spreadsheet pribadi Anda.
+* Menggunakan antrean latar belakang (*background queue worker*) yang toleran terhadap kegagalan jaringan (otomatis *retry* 3x dengan *exponential backoff*).
+* Anda memegang kendali 100% atas data Anda sendiri di Google Drive pribadi.
+
+### 4. 📅 Histori Harian & Modal Edit Kilat
+* Transaksi dikelompokkan rapi per tanggal (*Daily Divider*), bukan tabel kaku.
+* Menyentuh baris transaksi mana pun langsung membuka *bottom-sheet modal* untuk mengubah nominal, rekening, atau kategori dalam hitungan detik.
+
+### 5. 🎯 Pemantauan Anggaran Bulanan
+* Pasang plafon anggaran pengeluaran per kategori.
+* Indikator progres visual dinamis: bar hijau untuk aman, kuning mendekati batas, dan merah jika melewati batas anggaran.
+
+### 6. 🔒 Keamanan & Isolasi Multi-User Penuh
+* **UUID di Semua Entitas**: Seluruh ID transaksi, rekening, dan kategori menggunakan UUID acak sehingga mustahil ditebak oleh pihak luar.
+* **Enkripsi Kredensial AES-256**: Kredensial integrasi Google Service Account tersimpan di database dengan enkripsi kuat (`encrypted:array`).
+* **Proteksi Akses Berlapis**: Validasi kepemilikan data di setiap rute controller memastikan tidak ada pengguna yang bisa melihat data pengguna lain.
+
+### 7. 🔑 Akses 1-Klik Google OAuth
+* Pengguna baru bisa langsung masuk dan menggunakan aplikasi dalam 1 kali klik menggunakan akun Google tanpa perlu formulir registrasi yang panjang.
+* Pengguna baru otomatis mendapatkan rekening awal dan 14 kategori keuangan siap pakai (*auto-onboarding*).
+
+---
+
+## 🛠️ Tech Stack & Arsitektur
+
+| Lapisan | Teknologi | Deskripsi |
+| :--- | :--- | :--- |
+| **Backend** | **Laravel 11 (PHP 8.3)** | Arsitektur MVC modern, Form Requests, Queue Jobs, Eloquent ORM |
+| **Frontend** | **Vue 3 (Composition API)** | Reactive SPA menggunakan `<script setup>` dan TypeScript types |
+| **Glue Layer** | **Inertia.js v2** | Menghubungkan Laravel backend dengan Vue SPA tanpa REST API kaku |
+| **Styling** | **Tailwind CSS v3** | Desain responsif mobile-first, dark accents, dan utility-first styling |
+| **Icons & Charts**| **Lucide Icons & Chart.js** | Visualisasi data interaktif & ikon antarmuka modern |
+| **Database** | **PostgreSQL / MySQL** | Kompatibel penuh untuk database lokal maupun shared hosting |
+| **Testing** | **Pest PHP** | **99 automated tests passed** (353 assertions) menjamin keandalan fitur |
+
+---
+
+## 💻 Panduan Instalasi Lokal
+
+Jika Anda ingin menjalankan FinTrack di komputer lokal untuk pengembangan:
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/agengwahid/gengs-fintrack.git
+cd gengs-fintrack
+```
+
+### 2. Install Dependensi PHP & JavaScript
+```bash
+composer install
+npm install
+```
+
+### 3. Konfigurasi Lingkungan (`.env`)
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+Sesuaikan konfigurasi database Anda di `.env`:
+```env
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=gengs_fintrack
+DB_USERNAME=postgres
+DB_PASSWORD=secret
+```
+
+### 4. Jalankan Migrasi & Seeder
+```bash
+php artisan migrate --seed
+```
+
+### 5. Jalankan Pengujian Otomatis
+```bash
+./vendor/bin/pest
+```
+
+### 6. Jalankan Server Pengembangan
+Buka dua jendela terminal terpisah:
+```bash
+# Terminal 1: Vite HMR
+npm run dev
+
+# Terminal 2: Server Laravel
+php artisan serve
+```
+Akses aplikasi melalui peramban di: **`http://localhost:8000`**
 
 ---
 
 ## 📄 Lisensi
 
-Aplikasi ini dilisensikan di bawah [MIT License](LICENSE).
+FinTrack dilisensikan di bawah lisensi terbuka [MIT License](LICENSE).  
+Dibuat dengan ❤️ oleh [Muhammad Ageng Zayem Wahid](https://github.com/agengwahid).

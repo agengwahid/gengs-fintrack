@@ -80,6 +80,7 @@ class TransactionController extends Controller
 
         // Paginate results
         $transactions = $query->orderBy('date', 'desc')
+            ->orderBy('time', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(15)
             ->withQueryString();
@@ -121,16 +122,28 @@ class TransactionController extends Controller
     {
         $user = $request->user();
 
+        if ($request->has('amount') && is_string($request->input('amount'))) {
+            $request->merge([
+                'amount' => str_replace('.', '', str_replace(',', '.', $request->input('amount'))),
+            ]);
+        }
+
         $validated = $request->validate([
             'type' => ['required', 'string', 'in:expense,income,transfer'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'date' => ['required', 'date'],
+            'time' => ['nullable', 'string', 'regex:/^([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/'],
             'account_id' => ['required', 'uuid', 'exists:accounts,id'],
             'destination_account_id' => ['nullable', 'uuid', 'exists:accounts,id', 'different:account_id'],
             'category_id' => ['nullable', 'uuid', 'exists:categories,id'],
             'notes' => ['nullable', 'string', 'max:500'],
             'reference_number' => ['nullable', 'string', 'max:100'],
         ]);
+
+        // Default time to current time if not provided on create
+        if (empty($validated['time'])) {
+            $validated['time'] = now()->format('H:i');
+        }
 
         // Validate account ownership
         $account = Account::findOrFail($validated['account_id']);
@@ -179,16 +192,28 @@ class TransactionController extends Controller
         $user = $request->user();
         abort_if($transaction->user_id !== $user->id, 403);
 
+        if ($request->has('amount') && is_string($request->input('amount'))) {
+            $request->merge([
+                'amount' => str_replace('.', '', str_replace(',', '.', $request->input('amount'))),
+            ]);
+        }
+
         $validated = $request->validate([
             'type' => ['required', 'string', 'in:expense,income,transfer'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'date' => ['required', 'date'],
+            'time' => ['nullable', 'string', 'regex:/^([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/'],
             'account_id' => ['required', 'uuid', 'exists:accounts,id'],
             'destination_account_id' => ['nullable', 'uuid', 'exists:accounts,id', 'different:account_id'],
             'category_id' => ['nullable', 'uuid', 'exists:categories,id'],
             'notes' => ['nullable', 'string', 'max:500'],
             'reference_number' => ['nullable', 'string', 'max:100'],
         ]);
+
+        // Keep existing time if not specified on update
+        if (empty($validated['time'])) {
+            unset($validated['time']);
+        }
 
         // Validate account ownership
         $account = Account::findOrFail($validated['account_id']);

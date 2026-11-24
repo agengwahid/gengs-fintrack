@@ -144,6 +144,7 @@ class DashboardController extends Controller
         $recentTransactions = $user->transactions()
             ->with(['account', 'destinationAccount', 'category'])
             ->orderBy('date', 'desc')
+            ->orderBy('time', 'desc')
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();

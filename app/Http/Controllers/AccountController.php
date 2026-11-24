@@ -40,6 +40,12 @@ class AccountController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        if ($request->has('initial_balance') && is_string($request->input('initial_balance'))) {
+            $request->merge([
+                'initial_balance' => str_replace('.', '', str_replace(',', '.', $request->input('initial_balance'))),
+            ]);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'type' => ['required', 'string', 'in:cash,bank,ewallet,investment,credit_card,other'],
@@ -67,6 +73,12 @@ class AccountController extends Controller
     public function update(Request $request, Account $account): RedirectResponse
     {
         abort_if($account->user_id !== $request->user()->id, 403);
+
+        if ($request->has('initial_balance') && is_string($request->input('initial_balance'))) {
+            $request->merge([
+                'initial_balance' => str_replace('.', '', str_replace(',', '.', $request->input('initial_balance'))),
+            ]);
+        }
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],

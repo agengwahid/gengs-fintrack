@@ -1,0 +1,17 @@
+# FinTrack - Root Security & Public Forwarder for cPanel Shared Hosting
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Strictly block access to sensitive files
+    RewriteRule ^(\.env|\.git|artisan|composer\.(json|lock)|package\.(json|lock)|phpunit\.xml|vite\.config\.js) - [F,L,NC]
+
+    # 2. Strictly block direct access to internal Laravel directories
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage/framework|storage/logs|vendor)/ - [F,L,NC]
+
+    # 3. Route all traffic safely to the public/ directory if not already there
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Disable directory listing
+Options -Indexes
