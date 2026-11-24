@@ -15,9 +15,10 @@ function showToast(msg, toastType = 'success') {
     type.value = toastType;
     visible.value = true;
     if (timer) clearTimeout(timer);
+    const duration = toastType === 'error' ? 4000 : 2400;
     timer = setTimeout(() => {
         visible.value = false;
-    }, 4500);
+    }, duration);
 }
 
 function dismiss() {
@@ -44,31 +45,59 @@ watch(
 </script>
 
 <template>
+    <!-- Outer container: fixed top-20 on mobile (below 64px header), pointer-events-none so nothing is blocked -->
     <div
-        v-if="visible"
-        class="fixed top-5 right-5 z-50 flex items-center gap-3 rounded-xl p-4 shadow-lg ring-1 transition-all duration-300 max-w-md"
-        :class="{
-            'bg-emerald-50 text-emerald-900 ring-emerald-200': type === 'success',
-            'bg-rose-50 text-rose-900 ring-rose-200': type === 'error',
-            'bg-amber-50 text-amber-900 ring-amber-200': type === 'warning',
-            'bg-sky-50 text-sky-900 ring-sky-200': type === 'info',
-        }"
+        class="fixed top-20 sm:top-5 inset-x-0 sm:inset-x-auto sm:right-6 z-50 flex justify-center sm:justify-end px-4 sm:px-0 pointer-events-none"
     >
-        <CheckCircle2 v-if="type === 'success'" class="h-5 w-5 text-emerald-600 shrink-0" />
-        <AlertCircle v-else-if="type === 'error'" class="h-5 w-5 text-rose-600 shrink-0" />
-        <AlertTriangle v-else-if="type === 'warning'" class="h-5 w-5 text-amber-600 shrink-0" />
-        <Info v-else class="h-5 w-5 text-sky-600 shrink-0" />
-
-        <div class="text-sm font-medium flex-1">
-            {{ message }}
-        </div>
-
-        <button
-            type="button"
-            @click="dismiss"
-            class="rounded-lg p-1 text-slate-400 hover:text-slate-600 hover:bg-black/5 transition"
+        <Transition
+            enter-active-class="transform ease-out duration-300 transition"
+            enter-from-class="-translate-y-3 opacity-0 scale-95"
+            enter-to-class="translate-y-0 opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-200"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="-translate-y-2 opacity-0 scale-95"
         >
-            <X class="h-4 w-4" />
-        </button>
+            <div
+                v-if="visible"
+                @click="dismiss"
+                class="pointer-events-auto cursor-pointer max-w-md w-full sm:w-auto flex items-center gap-3 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-md border transition-all active:scale-[0.98]"
+                :class="{
+                    'bg-slate-900/95 text-white border-emerald-500/30 shadow-emerald-950/20': type === 'success',
+                    'bg-slate-900/95 text-white border-rose-500/30 shadow-rose-950/20': type === 'error',
+                    'bg-slate-900/95 text-white border-amber-500/30 shadow-amber-950/20': type === 'warning',
+                    'bg-slate-900/95 text-white border-sky-500/30 shadow-sky-950/20': type === 'info',
+                }"
+                role="status"
+                aria-live="polite"
+            >
+                <div
+                    class="w-7 h-7 rounded-xl flex items-center justify-center shrink-0"
+                    :class="{
+                        'bg-emerald-500/20 text-emerald-400': type === 'success',
+                        'bg-rose-500/20 text-rose-400': type === 'error',
+                        'bg-amber-500/20 text-amber-400': type === 'warning',
+                        'bg-sky-500/20 text-sky-400': type === 'info',
+                    }"
+                >
+                    <CheckCircle2 v-if="type === 'success'" class="h-4 w-4" />
+                    <AlertCircle v-else-if="type === 'error'" class="h-4 w-4" />
+                    <AlertTriangle v-else-if="type === 'warning'" class="h-4 w-4" />
+                    <Info v-else class="h-4 w-4" />
+                </div>
+
+                <div class="text-xs sm:text-sm font-medium flex-1 text-slate-100 leading-snug">
+                    {{ message }}
+                </div>
+
+                <button
+                    type="button"
+                    @click.stop="dismiss"
+                    class="rounded-lg p-1 text-slate-400 hover:text-white hover:bg-white/10 transition shrink-0 ml-1"
+                    aria-label="Tutup notifikasi"
+                >
+                    <X class="h-4 w-4" />
+                </button>
+            </div>
+        </Transition>
     </div>
 </template>

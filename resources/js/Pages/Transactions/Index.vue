@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import HeaderActionButton from '@/Components/HeaderActionButton.vue';
@@ -215,7 +215,10 @@ function setTransactionType(type) {
     }
 }
 
-function submitForm() {
+const keepOpenAfterSave = ref(false);
+
+function submitForm(continueAdding = false) {
+    keepOpenAfterSave.value = continueAdding;
     if (isEditing.value) {
         form.put(route('transactions.update', editingTransactionId.value), {
             preserveScroll: true,
@@ -224,10 +227,43 @@ function submitForm() {
     } else {
         form.post(route('transactions.store'), {
             preserveScroll: true,
-            onSuccess: () => closeModal(),
+            onSuccess: () => {
+                if (keepOpenAfterSave.value) {
+                    form.amount = '';
+                    form.notes = '';
+                    form.reference_number = '';
+                    form.time = getCurrentTime();
+                    form.clearErrors();
+                } else {
+                    closeModal();
+                }
+            },
         });
     }
 }
+
+function handleCustomOpen() {
+    openCreateModal('expense');
+}
+
+onMounted(() => {
+    window.addEventListener('fintrack:open-create-transaction', handleCustomOpen);
+    if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('create') === '1') {
+            openCreateModal('expense');
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('create');
+            window.history.replaceState({}, '', cleanUrl.toString());
+        }
+    }
+});
+
+onUnmounted(() => {
+    if (typeof window !== 'undefined') {
+        window.removeEventListener('fintrack:open-create-transaction', handleCustomOpen);
+    }
+});
 
 function confirmDelete(tx) {
     transactionToDelete.value = tx;
@@ -284,79 +320,96 @@ function executeDelete() {
                 </div>
             </div>
 
-            <!-- Summary Stats for Selected Month -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <!-- Summary Stats for Selected Month (Clean Data-First Architecture) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <!-- Total Income -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                            Pemasukan ({{ formatPeriodIndo(filterForm.month) }})
-                        </div>
-                        <div class="text-xl sm:text-2xl font-black text-emerald-600 mt-1">
-                            +{{ formatRupiah(summary.total_income) }}
-                        </div>
+                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        Pemasukan ({{ formatPeriodIndo(filterForm.month) }})
                     </div>
-                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                        <TrendingUp class="w-6 h-6" />
+                    <div class="text-xl sm:text-2xl font-bold font-mono tracking-tight text-emerald-700 mt-2">
+                        +{{ formatRupiah(summary.total_income) }}
+                    </div>
+                    <div class="mt-2 text-[11px] text-slate-400">
+                        Total pemasukan tercatat
                     </div>
                 </div>
 
                 <!-- Total Expense -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                            Pengeluaran ({{ formatPeriodIndo(filterForm.month) }})
-                        </div>
-                        <div class="text-xl sm:text-2xl font-black text-rose-600 mt-1">
-                            -{{ formatRupiah(summary.total_expense) }}
-                        </div>
+                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        Pengeluaran ({{ formatPeriodIndo(filterForm.month) }})
                     </div>
-                    <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                        <TrendingDown class="w-6 h-6" />
+                    <div class="text-xl sm:text-2xl font-bold font-mono tracking-tight text-rose-700 mt-2">
+                        -{{ formatRupiah(summary.total_expense) }}
+                    </div>
+                    <div class="mt-2 text-[11px] text-slate-400">
+                        Total pengeluaran tercatat
                     </div>
                 </div>
 
                 <!-- Net Cashflow -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                            Arus Kas Bersih
-                        </div>
-                        <div
-                            class="text-xl sm:text-2xl font-black mt-1"
-                            :class="summary.net_cashflow >= 0 ? 'text-teal-600' : 'text-amber-600'"
+                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        <span>Arus Kas Bersih</span>
+                        <span
+                            class="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                            :class="summary.net_cashflow >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
                         >
-                            {{ formatRupiah(summary.net_cashflow) }}
-                        </div>
+                            {{ summary.net_cashflow >= 0 ? 'Surplus' : 'Defisit' }}
+                        </span>
                     </div>
                     <div
-                        class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                        :class="summary.net_cashflow >= 0 ? 'bg-teal-50 text-teal-600' : 'bg-amber-50 text-amber-600'"
+                        class="text-xl sm:text-2xl font-bold font-mono tracking-tight mt-2"
+                        :class="summary.net_cashflow >= 0 ? 'text-slate-900' : 'text-rose-700'"
                     >
-                        <Wallet class="w-6 h-6" />
+                        {{ formatRupiah(summary.net_cashflow) }}
+                    </div>
+                    <div class="mt-2 text-[11px] text-slate-400">
+                        Selisih uang masuk dan keluar
                     </div>
                 </div>
             </div>
 
             <!-- Filters Toolbar -->
-            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <!-- Type Filter -->
-                    <div>
-                        <InputLabel for="filter-type" value="Tipe Transaksi" class="text-xs mb-1" />
-                        <select
-                            id="filter-type"
-                            v-model="filterForm.type"
-                            @change="applyFilters"
-                            class="block w-full rounded-xl border-slate-300 text-xs sm:text-sm focus:border-emerald-500 focus:ring-emerald-500"
-                        >
-                            <option value="">Semua Tipe</option>
-                            <option value="expense">Pengeluaran</option>
-                            <option value="income">Pemasukan</option>
-                            <option value="transfer">Transfer</option>
-                        </select>
-                    </div>
+            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3.5">
+                <!-- Quick Type Filter Chips (One-Tap on Mobile) -->
+                <div class="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-xl overflow-x-auto text-xs">
+                    <button
+                        type="button"
+                        @click="filterForm.type = ''; applyFilters()"
+                        class="flex-1 min-w-[70px] py-1.5 px-3 rounded-lg font-semibold transition-all text-center whitespace-nowrap"
+                        :class="!filterForm.type ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    >
+                        Semua
+                    </button>
+                    <button
+                        type="button"
+                        @click="filterForm.type = 'expense'; applyFilters()"
+                        class="flex-1 min-w-[85px] py-1.5 px-3 rounded-lg font-semibold transition-all text-center whitespace-nowrap"
+                        :class="filterForm.type === 'expense' ? 'bg-white text-rose-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    >
+                        Pengeluaran
+                    </button>
+                    <button
+                        type="button"
+                        @click="filterForm.type = 'income'; applyFilters()"
+                        class="flex-1 min-w-[85px] py-1.5 px-3 rounded-lg font-semibold transition-all text-center whitespace-nowrap"
+                        :class="filterForm.type === 'income' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    >
+                        Pemasukan
+                    </button>
+                    <button
+                        type="button"
+                        @click="filterForm.type = 'transfer'; applyFilters()"
+                        class="flex-1 min-w-[75px] py-1.5 px-3 rounded-lg font-semibold transition-all text-center whitespace-nowrap"
+                        :class="filterForm.type === 'transfer' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    >
+                        Transfer
+                    </button>
+                </div>
 
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <!-- Account Filter -->
                     <div>
                         <InputLabel for="filter-account" value="Rekening" class="text-xs mb-1" />
@@ -546,19 +599,23 @@ function executeDelete() {
                                 </div>
                             </div>
 
-                            <!-- Actions -->
-                            <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition">
+                            <!-- Actions (Touch-friendly targets >= 40px) -->
+                            <div class="flex items-center gap-1 transition">
                                 <button
+                                    type="button"
                                     @click="openEditModal(tx)"
-                                    class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition"
+                                    class="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 active:scale-95 transition"
                                     title="Ubah Transaksi"
+                                    aria-label="Ubah Transaksi"
                                 >
                                     <Pencil class="w-4 h-4" />
                                 </button>
                                 <button
+                                    type="button"
                                     @click="confirmDelete(tx)"
-                                    class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                                    class="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-700 hover:bg-rose-50 active:scale-95 transition"
                                     title="Hapus Transaksi"
+                                    aria-label="Hapus Transaksi"
                                 >
                                     <Trash2 class="w-4 h-4" />
                                 </button>
@@ -573,6 +630,17 @@ function executeDelete() {
                 </div>
             </div>
         </div>
+
+        <!-- Floating Action Button for Mobile Quick Add -->
+        <button
+            type="button"
+            @click="openCreateModal('expense')"
+            class="sm:hidden fixed bottom-20 right-4 z-30 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-xl shadow-emerald-950/25 flex items-center justify-center transition-all"
+            aria-label="Catat Transaksi"
+            title="Catat Transaksi"
+        >
+            <Plus class="w-6 h-6 stroke-[2.5]" />
+        </button>
 
         <!-- Add / Edit Modal -->
         <Modal :show="isModalOpen" @close="closeModal" max-width="lg">
@@ -780,11 +848,20 @@ function executeDelete() {
                     </div>
 
                     <!-- Footer Actions -->
-                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                        <SecondaryButton type="button" @click="closeModal">
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3 pt-4 border-t border-slate-100">
+                        <SecondaryButton type="button" @click="closeModal" class="w-full sm:w-auto justify-center">
                             Batal
                         </SecondaryButton>
-                        <PrimaryButton :disabled="form.processing" class="bg-emerald-600 hover:bg-emerald-700">
+                        <button
+                            v-if="!isEditing"
+                            type="button"
+                            :disabled="form.processing"
+                            @click="submitForm(true)"
+                            class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50"
+                        >
+                            Simpan & Catat Lagi
+                        </button>
+                        <PrimaryButton :disabled="form.processing" @click="submitForm(false)" class="w-full sm:w-auto justify-center bg-emerald-600 hover:bg-emerald-700">
                             {{ form.processing ? 'Menyimpan...' : (isEditing ? 'Simpan Perubahan' : 'Catat Transaksi') }}
                         </PrimaryButton>
                     </div>

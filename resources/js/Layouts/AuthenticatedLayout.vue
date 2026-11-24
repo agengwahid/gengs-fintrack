@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, usePage, router } from '@inertiajs/vue3';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import ToastNotification from '@/Components/ToastNotification.vue';
 import {
@@ -18,7 +18,8 @@ import {
     UserCircle,
     ChevronDown,
     PanelLeftClose,
-    PanelLeftOpen
+    PanelLeftOpen,
+    Plus
 } from '@lucide/vue';
 
 const page = usePage();
@@ -59,6 +60,14 @@ function isActive(routeName) {
         return route().current(routeName) || route().current(routeName.replace('.index', '') + '.*');
     } catch {
         return false;
+    }
+}
+
+function handleMobileQuickAdd() {
+    if (route().current('transactions.*')) {
+        window.dispatchEvent(new CustomEvent('fintrack:open-create-transaction'));
+    } else {
+        router.visit(route('transactions.index', { create: 1 }));
     }
 }
 </script>
@@ -284,18 +293,20 @@ function isActive(routeName) {
                 </header>
 
                 <!-- Page Content -->
-                <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 lg:pb-8">
+                <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-[calc(env(safe-area-inset-bottom)+5.5rem)] lg:pb-8">
                     <slot />
                 </main>
             </div>
         </div>
 
-        <!-- Mobile Bottom Nav -->
-        <nav class="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-30 px-2 py-1.5 flex items-center justify-around shadow-lg">
+        <!-- Mobile Bottom Nav with Center Quick-Add Action -->
+        <nav
+            class="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 z-30 px-3 pt-1.5 pb-[calc(env(safe-area-inset-bottom)+0.35rem)] flex items-center justify-between shadow-[0_-4px_16px_rgba(0,0,0,0.04)]"
+        >
             <Link
                 :href="route('dashboard')"
-                class="flex flex-col items-center justify-center py-1 px-2 rounded-lg text-xs font-medium transition"
-                :class="isActive('dashboard') ? 'text-emerald-600 font-semibold' : 'text-slate-500 hover:text-slate-900'"
+                class="flex flex-1 flex-col items-center justify-center py-1 text-[11px] font-medium transition-colors"
+                :class="isActive('dashboard') ? 'text-emerald-600 font-bold' : 'text-slate-500 hover:text-slate-900'"
             >
                 <LayoutDashboard class="w-5 h-5 mb-0.5" />
                 <span>Dashboard</span>
@@ -303,37 +314,42 @@ function isActive(routeName) {
 
             <Link
                 :href="getHref('transactions.index')"
-                class="flex flex-col items-center justify-center py-1 px-2 rounded-lg text-xs font-medium transition"
-                :class="isActive('transactions.index') ? 'text-emerald-600 font-semibold' : 'text-slate-500 hover:text-slate-900'"
+                class="flex flex-1 flex-col items-center justify-center py-1 text-[11px] font-medium transition-colors"
+                :class="isActive('transactions.index') ? 'text-emerald-600 font-bold' : 'text-slate-500 hover:text-slate-900'"
             >
                 <ArrowLeftRight class="w-5 h-5 mb-0.5" />
                 <span>Transaksi</span>
             </Link>
 
+            <!-- Center Elevated Quick-Add Button -->
+            <div class="flex-1 flex justify-center -mt-6">
+                <button
+                    type="button"
+                    @click="handleMobileQuickAdd"
+                    class="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-emerald-950/20 ring-4 ring-white transition-all"
+                    aria-label="Catat Transaksi Cepat"
+                    title="Catat Transaksi"
+                >
+                    <Plus class="w-6 h-6 stroke-[2.5]" />
+                </button>
+            </div>
+
             <Link
                 :href="getHref('accounts.index')"
-                class="flex flex-col items-center justify-center py-1 px-2 rounded-lg text-xs font-medium transition"
-                :class="isActive('accounts.index') ? 'text-emerald-600 font-semibold' : 'text-slate-500 hover:text-slate-900'"
+                class="flex flex-1 flex-col items-center justify-center py-1 text-[11px] font-medium transition-colors"
+                :class="isActive('accounts.index') ? 'text-emerald-600 font-bold' : 'text-slate-500 hover:text-slate-900'"
             >
                 <Wallet class="w-5 h-5 mb-0.5" />
                 <span>Rekening</span>
             </Link>
 
-            <Link
-                :href="getHref('reports.index')"
-                class="flex flex-col items-center justify-center py-1 px-2 rounded-lg text-xs font-medium transition"
-                :class="isActive('reports.index') ? 'text-emerald-600 font-semibold' : 'text-slate-500 hover:text-slate-900'"
-            >
-                <BarChart3 class="w-5 h-5 mb-0.5" />
-                <span>Laporan</span>
-            </Link>
-
             <button
+                type="button"
                 @click="mobileMenuOpen = true"
-                class="flex flex-col items-center justify-center py-1 px-2 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-900"
+                class="flex flex-1 flex-col items-center justify-center py-1 text-[11px] font-medium text-slate-500 hover:text-slate-900 transition-colors"
             >
                 <Menu class="w-5 h-5 mb-0.5" />
-                <span>Lainnya</span>
+                <span>Menu</span>
             </button>
         </nav>
     </div>
