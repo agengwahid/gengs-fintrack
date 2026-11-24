@@ -208,6 +208,11 @@ class GoogleSheetsService
                 ];
             }
 
+            $spreadsheetId = $this->getSpreadsheetId($u);
+            if ($spreadsheetId) {
+                cache()->forget('sheets_initialized_'.$spreadsheetId);
+            }
+
             $service = $this->getService($u);
             $spreadsheet = $service->spreadsheets->get($spreadsheetId);
             $title = $spreadsheet->getProperties()->getTitle();
@@ -279,6 +284,16 @@ class GoogleSheetsService
     {
         $u = $user ?? $this->user;
         $spreadsheetId = $this->getSpreadsheetId($u);
+
+        if (empty($spreadsheetId)) {
+            return;
+        }
+
+        $cacheKey = 'sheets_initialized_'.$spreadsheetId;
+        if (cache()->has($cacheKey)) {
+            return;
+        }
+
         $service = $this->getService($u);
 
         $spreadsheet = $service->spreadsheets->get($spreadsheetId);
@@ -359,6 +374,67 @@ class GoogleSheetsService
                     ['valueInputOption' => 'USER_ENTERED']
                 );
             }
+        }
+
+        cache()->put($cacheKey, true, now()->addDay());
+    }
+
+    /**
+     * Synchronize all transactions for a user in a single, high-performance batch operation.
+     */
+    public function syncAllTransactions(User $user): void
+    {
+        $this->forUser($user);
+        $this->ensureWorksheetsExist($user);
+
+        $spreadsheetId = $this->getSpreadsheetId($user);
+        $service = $this->getService($user);
+
+        // Fetch all transactions in one DB query
+        $transactions = $user->transactions()
+            ->with(['account', 'category'])
+            ->orderBy('date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $rows = [];
+        foreach ($transactions as $transaction) {
+            $dateFormatted = $transaction->date instanceof \DateTimeInterface
+                ? $transaction->date->format('Y-m-d')
+                : (string) $transaction->date;
+
+            $rows[] = [
+                (string) $transaction->id,
+                $dateFormatted,
+                $transaction->type,
+                $transaction->account?->name ?? '-',
+                $transaction->category?->name ?? ($transaction->type === 'transfer' ? 'Transfer Antar Rekening' : '-'),
+                (float) $transaction->amount,
+                $transaction->notes ?? '-',
+                $transaction->reference_number ?? '-',
+                $transaction->created_at ? $transaction->created_at->toDateTimeString() : '-',
+                $transaction->updated_at ? $transaction->updated_at->toDateTimeString() : '-',
+            ];
+        }
+
+        // 1. Clear existing rows in Transactions sheet in 1 single API call
+        $service->spreadsheets_values->clear(
+            $spreadsheetId,
+            'Transactions!A2:J',
+            new ClearValuesRequest
+        );
+
+        // 2. Batch write all transactions at once in 1 single API call
+        if (! empty($rows)) {
+            $body = new ValueRange([
+                'values' => $rows,
+            ]);
+            $service->spreadsheets_values->update(
+                $spreadsheetId,
+                'Transactions!A2:J'.(count($rows) + 1),
+                $body,
+                ['valueInputOption' => 'USER_ENTERED']
+            );
         }
     }
 

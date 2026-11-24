@@ -359,3 +359,22 @@ test('artisan command fintrack:sync-sheets dispatches sync jobs for enabled user
         return $job->userId === $user1->id && $job->action === 'sync_all';
     });
 });
+
+test('sync job executes batch sync all transactions efficiently with mocked service', function () {
+    $user = User::factory()->create();
+
+    $mockService = Mockery::mock(GoogleSheetsService::class);
+    $mockService->shouldReceive('forUser')->andReturnSelf();
+    $mockService->shouldReceive('isEnabled')->andReturn(true);
+    $mockService->shouldReceive('syncAllTransactions')->once()->with(Mockery::type(User::class));
+    $mockService->shouldReceive('updateSummaries')->once()->with($user->id);
+
+    $job = new SyncTransactionToGoogleSheet($user->id, null, 'sync_all');
+    $job->handle($mockService);
+
+    $this->assertDatabaseHas('sheet_sync_logs', [
+        'user_id' => $user->id,
+        'action' => 'sync_all',
+        'status' => 'success',
+    ]);
+});

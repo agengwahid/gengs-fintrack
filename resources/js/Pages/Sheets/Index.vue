@@ -21,7 +21,6 @@ import {
     Copy,
     ChevronDown,
     Layers,
-    Send,
     Settings2,
     Upload,
     Check,
@@ -45,7 +44,6 @@ const props = defineProps({
 });
 
 const isTesting = ref(false);
-const isSyncingAll = ref(false);
 const showSettings = ref(false);
 const showAdvancedCreds = ref(false);
 const copiedEmail = ref(false);
@@ -101,19 +99,6 @@ function testConnection() {
         preserveScroll: true,
         onFinish: () => {
             isTesting.value = false;
-        },
-    });
-}
-
-function syncAll() {
-    if (!confirm('Apakah Anda yakin ingin menyinkronkan seluruh riwayat transaksi ke Google Sheets?')) {
-        return;
-    }
-    isSyncingAll.value = true;
-    router.post(route('sheets.sync-all'), {}, {
-        preserveScroll: true,
-        onFinish: () => {
-            isSyncingAll.value = false;
         },
     });
 }
@@ -179,16 +164,6 @@ function getActionLabel(action) {
                     variant="secondary"
                     :icon="RefreshCw"
                     :icon-class="isTesting ? 'animate-spin text-emerald-600' : 'text-slate-600'"
-                />
-
-                <HeaderActionButton
-                    @click="syncAll"
-                    :disabled="isSyncingAll || !config.is_ready"
-                    :label="isSyncingAll ? 'Memproses...' : 'Sinkronkan Semua'"
-                    :short-label="isSyncingAll ? 'Proses...' : 'Sinkron'"
-                    variant="primary"
-                    :icon="Send"
-                    :icon-class="isSyncingAll ? 'animate-pulse' : ''"
                 />
             </div>
         </template>

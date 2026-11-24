@@ -105,9 +105,7 @@ class SyncTransactionToGoogleSheet implements ShouldQueue
                 }
             } elseif ($this->action === 'sync_all') {
                 $user = User::findOrFail($this->userId);
-                foreach ($user->transactions()->with(['account', 'category'])->cursor() as $tx) {
-                    $sheetsService->upsertTransaction($tx);
-                }
+                $sheetsService->syncAllTransactions($user);
             } else { // 'create' or 'update'
                 $transaction = Transaction::with(['account', 'category'])->find($this->transactionId);
 
