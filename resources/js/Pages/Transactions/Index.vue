@@ -13,7 +13,7 @@ import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DangerButton from '@/Components/DangerButton.vue';
-import { formatRupiah, formatDateIndo, formatPeriodIndo } from '@/Utils/formatters';
+import { formatRupiah, formatDateIndo, formatPeriodIndo, formatTransactionDate } from '@/Utils/formatters';
 import {
     ArrowLeftRight,
     Plus,
@@ -491,7 +491,7 @@ function executeDelete() {
 
                                 <!-- Sub-info: Date, Account(s), Notes -->
                                 <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 mt-1">
-                                    <span class="font-medium text-slate-600">{{ formatDateIndo(tx.date) }}</span>
+                                    <span class="font-medium text-slate-600">{{ formatTransactionDate(tx.date, tx.created_at) }}</span>
                                     <span>&bull;</span>
 
                                     <!-- Account info -->

@@ -6,7 +6,7 @@ import DynamicIcon from '@/Components/DynamicIcon.vue';
 import HeaderActionButton from '@/Components/HeaderActionButton.vue';
 import MonthYearPicker from '@/Components/MonthYearPicker.vue';
 import Chart from 'chart.js/auto';
-import { formatRupiah, formatDateIndo, formatPeriodIndo } from '@/Utils/formatters';
+import { formatRupiah, formatDateIndo, formatPeriodIndo, formatTransactionDate } from '@/Utils/formatters';
 import {
     Wallet,
     ArrowUpRight,
@@ -499,7 +499,7 @@ watch(
                                         {{ t.notes || t.category?.name || (t.type === 'transfer' ? 'Transfer Antar Rekening' : 'Transaksi') }}
                                     </p>
                                     <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-                                        <span>{{ formatDateIndo(t.date) }}</span>
+                                        <span>{{ formatTransactionDate(t.date, t.created_at) }}</span>
                                         <span>&bull;</span>
                                         <span class="truncate">{{ t.account?.name }}</span>
                                     </div>
